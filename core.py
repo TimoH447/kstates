@@ -12,6 +12,9 @@ class Region:
             return True
         return False
 
+    def __hash__(self):
+        return hash(frozenset(self.bounding_segments))
+
     def __repr__(self):
         return f"Region {self.bounding_segments}"
     
@@ -21,6 +24,9 @@ class Crossing:
         segments: 4 segments of the crossing in counterclockwise order
         """
         self.segments= segments
+
+    def get_segment(self,segment_no):
+        return self.segments[segment_no]
 
     def __repr__(self):
         return f"Crossing {self.segments}"
@@ -32,7 +38,7 @@ class Crossing:
     def __hash__(self):
         return hash(self.segments) 
 
-    def clockwise_next(self, region):
+    def first_region_segment(self, region):
         """
         Input id of region: 
             0=region between segment 0,1, 
@@ -42,7 +48,7 @@ class Crossing:
         return clockwise next segment of region
         """
         return self.segments[region]
-    def counterclockwise_next(self, region):
+    def second_region_segment(self, region):
         """
         Input id of region: 
             0=region between segment 0,1, 
@@ -52,6 +58,17 @@ class Crossing:
         
         """
         return self.segments[(region +1) % 4]
+    def clockwise_next(self,segment):
+        if not segment in self.segments:
+            raise ValueError("segment not in this crossing")
+        segment_index = self.segments.index(segment)
+        return self.segments[(segment_index - 1) % 4]
+
+    def counterclockwise_next(self,segment):
+        if not segment in self.segments:
+            raise ValueError("segment not in this crossing")
+        segment_index = self.segments.index(segment)
+        return self.segments[(segment_index + 1) % 4]
 
 
 class KnotDiagram:
@@ -63,7 +80,49 @@ class KnotDiagram:
         self.number_of_crossings = len(pd_notation)
         self.number_of_regions = self.number_of_crossings + 2
         self.number_of_segments = 2*self.number_of_crossings
+    
+    def get_region(self, crossing_id, region_id):
+        """
+        Reconstruct the region adjacent to a given crossing at a specific marker position.
+        
+        Parameters:
+            crossing_id (int): Index of the starting crossing in self.crossings.
+            region_id (int): Marker position (0 to 3) on that crossing.
+            
+        Returns:
+            Region: The region bounded by segments traced from that marker.
+        """
+        boundary = []
+        visited_segments = set()
 
+        crossing = self.crossings[crossing_id]
+        segment = crossing.segments[region_id]
+        current_segment = segment
+        current_crossing = crossing
+
+        visited_segments.add(current_segment)
+        boundary.append(current_segment)
+
+        while True:
+
+            # Step to the next segment in counterclockwise direction
+            next_segment = current_crossing.counterclockwise_next(current_segment)
+            if next_segment == segment:
+                break  # Completed the loop
+            boundary.append(next_segment)
+
+            # Now find the next crossing that shares this segment
+            for next_c in self.crossings:
+                if next_c != current_crossing and next_segment in next_c.segments:
+                    current_crossing = next_c
+                    # determine the position of the segment in next_c to continue
+                    current_segment = next_segment
+                    break
+            else:
+                raise ValueError(f"No next crossing found for segment {next_segment}")
+
+
+        return Region(tuple(boundary))
 
     def get_knot_description(self):
         return f"Crossings: {self.number_of_crossings}, Regions: {self.number_of_regions}, Segments: {self.number_of_segments}"
@@ -81,10 +140,28 @@ class KauffmanState:
         """
         self.marker_positions = marker_positions  # Crossing -> int
 
-#    def get_region(self, crossing):
-        #"""Returns the region corresponding to the marker at the given crossing."""
-        #pos = self.marker_positions[crossing]
-        #return crossing.adjacent_regions[pos]
+    @classmethod
+    def from_marker_positions(cls,diagram,marker_positions):
+        if not cls._is_valid_state(diagram, marker_positions):
+            raise ValueError("Invalid Kauffman state: each crossing must map to a single valid marker position.")
+
+        marker_dict = {}
+        for i,crossing in enumerate(diagram.crossings):
+            marker_dict[crossing]=marker_positions[i]
+            
+        return cls(marker_dict)
+
+    @staticmethod
+    def _is_valid_state(diagram, marker_positions):
+        if len(diagram.crossings)!=len(marker_positions):
+            return False
+        if any([marker not in range(4) for marker in marker_positions]):
+            return False
+        regions = [diagram.get_region(i,marker) for i,marker in enumerate(marker_positions)]
+        if len(set(regions)) != diagram.number_of_crossings:
+            return False
+        return True
+
     def get_transposition_type(self, segment):
         """
         Checks whether a transposition at a segment is possible.
@@ -101,15 +178,15 @@ class KauffmanState:
 
         # Check for clockwise transposition
         if (
-            c0.counterclockwise_next(m0) == c1.counterclockwise_next(m1)
-            and segment == c1.counterclockwise_next(m1)
+            c0.second_region_segment(m0) == c1.second_region_segment(m1)
+            and segment == c1.second_region_segment(m1)
         ):
             return 'cw'
 
         # Check for counterclockwise transposition
         if (
-            c1.clockwise_next(m1) == c0.clockwise_next(m0)
-            and segment == c1.clockwise_next(m1)
+            c1.first_region_segment(m1) == c0.first_region_segment(m0)
+            and segment == c1.first_region_segment(m1)
         ):
             return 'ccw'
 
@@ -147,7 +224,45 @@ class KauffmanState:
         return hash(frozenset(self.marker_positions.items()))
 
     def __repr__(self):
-        return f"KauffmanState({{ {', '.join(f'{k}: {k.clockwise_next(v),k.counterclockwise_next(v)}' for k,v in self.marker_positions.items())} }})"
+        return f"KauffmanState({{ {', '.join(f'{k}: {k.first_region_segment(v),k.second_region_segment(v)}' for k,v in self.marker_positions.items())} }})"
 
 class StateLattice:
-    pass
+    def __init__(self, diagram):
+        self.diagram = diagram
+        self.state_to_id = {}
+        self.id_to_state = {}
+        self.state_count = 0
+        self.edges = []
+
+    def add_state(self, state):
+        if state not in self.state_to_id:
+            state_id = self.state_count
+            self.state_to_id[state] = state_id
+            self.id_to_state[state_id] = state
+            self.state_count += 1
+        return self.state_to_id[state]
+
+
+    def get_state_by_id(self, state_id):
+        return self.id_to_state.get(state_id)
+
+    def get_state_id(self, state):
+        return self.state_to_id.get(state)
+
+    def build_lattice(self):
+        """
+        Build the state lattice for the given knot diagram.
+        """
+        pass
+
+    def get_minimal_state(self):
+        """
+        Get the minimal state in the lattice.
+        """
+        pass
+
+    def get_maximal_state(self):
+        """
+        Get the maximal state in the lattice.
+        """
+        pass
