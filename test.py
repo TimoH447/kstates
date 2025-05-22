@@ -1,5 +1,7 @@
 import unittest
-from core import KnotDiagram, Crossing, KauffmanState, Region
+from src.knotdiagram import KnotDiagram,Crossing, Region
+from src.kstate import KauffmanState
+
 
 class TestTrefoilKnotDiagram(unittest.TestCase):
     def setUp(self):
