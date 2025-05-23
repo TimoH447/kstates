@@ -27,11 +27,34 @@ def main():
         (13,8,14,9),
         (14,10,15,9)
     ]
-    diagram = KnotDiagram(knot_8_8)
+    fig_8=[
+        (4,8,3,1),
+        (2,7,1,6),
+        (8,4,7,5),
+        (6,3,5,2),
+    ]
+    paper_knot = [
+        (1,13,20,14),
+        (19,9,18,10),
+        (17,7,16,8),
+        (15,1,14,2),
+        (13,5,12,6),
+        (11,15,10,16),
+        (9,17,8,18),
+        (7,3,6,4),
+        (5,11,4,12),
+        (3,19,2,20)
+    ]
+    diagram = KnotDiagram(link_pd)
 
     lattice = StateLattice(diagram)
+    min_state = lattice.get_minimal_state(22)
+    print(min_state)
+    print(min_state.get_all_possible_transpositions("ccw"))
+
     lattice.build_lattice(1)
-    print(lattice.edges)
+    print(len(lattice.nodes))
+    print(lattice.nodes)
 
 if __name__ == "__main__":
     main()

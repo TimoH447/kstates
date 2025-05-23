@@ -6,14 +6,15 @@ class StateNode:
     def __eq__(self, value):
         if not isinstance(value, StateNode):
             return False
-        transpositions_a = list(self.id)
-        transpositions_b = list(value.id)
-        for i,transposition in enumerate(transpositions_a):
-            if transposition not in transpositions_b:
+        transpositions_a = self.id.split(",")
+        transpositions_b = value.id.split(",")
+        for i in range(1,2*len(self.state.marker_positions)+1):
+            if transpositions_a.count(str(i)) != transpositions_b.count(str(i)):
                 return False
-            transpositions_b.remove(transposition)
-        if len(transpositions_b) != 0:
-            return False
+        return True
+
+    def __repr__(self):
+        return f"StateNode({self.id})"
 
         
 class KauffmanState:

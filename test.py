@@ -61,6 +61,18 @@ class TestKauffmanState(unittest.TestCase):
         with self.assertRaises(ValueError):
             KauffmanState.from_marker_positions(self.diagram, marker_positions)
 
+class TestStateNode(unittest.TestCase):
+    def setUp(self):
+        self.stub = KauffmanState([0,1,2,3])
+
+    def test_state_nodes(self):
+        list_of_nodes = [StateNode(self.stub,"12341"), StateNode(self.stub,"12342"), StateNode(self.stub,"12343")]
+        self.assertEqual(StateNode(self.stub,"11234") in list_of_nodes, True)
+
+    def test_not_in_state_node_list(self):
+        list_of_nodes = [StateNode(self.stub,"4")]
+        print(StateNode(self.stub, "8") in list_of_nodes)
+        self.assertEqual(StateNode(self.stub,"8") in list_of_nodes, True)
 
 class TestStateLattice(unittest.TestCase):
     def setUp(self):
@@ -72,13 +84,6 @@ class TestStateLattice(unittest.TestCase):
         min_state = KauffmanState.from_marker_positions(self.diagram, [3,0,3])
         self.assertEqual(self.state_lattice.get_minimal_state(1), min_state)
 
-class TestStateNode(unittest.TestCase):
-    def state_nodes(self):
-        list_of_nodes = [StateNode(None,"12341"), StateNode(None,"12342"), StateNode(None,"12343")]
-        self.assertEqual(StateNode(None,"11234") in list_of_nodes, True)
 
-    def not_in_state_node_list(self):
-        list_of_nodes = [StateNode(None,"12341"), StateNode(None,"12342"), StateNode(None,"12343")]
-        self.assertEqual(StateNode(None,"123411") in list_of_nodes, False)
 if __name__=="__main__":
     unittest.main()
