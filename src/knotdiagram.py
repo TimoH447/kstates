@@ -1,3 +1,7 @@
+from random import randint
+
+from src.kstate import KauffmanState
+
 class Region:
     def __init__(self,segments):
         """
@@ -80,6 +84,7 @@ class KnotDiagram:
         self.number_of_crossings = len(pd_notation)
         self.number_of_regions = self.number_of_crossings + 2
         self.number_of_segments = 2*self.number_of_crossings
+        self.segments = [i+1 for i in range(self.number_of_segments)]
     
     def get_region(self, crossing_id, region_id):
         """
@@ -123,6 +128,77 @@ class KnotDiagram:
 
 
         return Region(tuple(boundary))
+
+    def get_kstate_greedy(self,segment):
+        """
+        Get a Kauffman state of the knot diagram with no markers in the regions adjacent to the segment
+        This algorithm will choose the first possible marker position for each crossing. 
+        As consequence, it may not find a solution for all crossings.
+        """
+        # list of marker positions
+        marker_positions = []
+        # marked regions
+        marked_regions = []
+        for crossing_id,crossing in enumerate(self.crossings):
+            for region_id in range(4):
+                region = self.get_region(crossing_id,region_id)
+                if segment in region.bounding_segments:
+                    continue
+                if region in marked_regions:
+                    continue
+                marked_regions.append(region)
+                marker_positions.append(region_id)
+                break
+        
+        if len(marker_positions) != self.number_of_crossings:
+            raise ValueError("Not all crossings have a marker position")
+        return KauffmanState.from_marker_positions(self, marker_positions)
+
+    def get_kstate_greedy_randomized(self, segment,retries=100):
+        """
+        Get a Kauffman state of the knot diagram with no markers in the regions adjacent to the segment
+        This algorithm will choose the first possible marker position for each crossing. 
+        As consequence, it may not find a solution for all crossings.
+        """
+        # list of marker positions
+        marker_positions = []
+        # marked regions
+        marked_regions = []
+        while retries > 0 and len(marker_positions) != self.number_of_crossings:
+            marker_positions = []
+            marked_regions = []
+            for crossing_id,crossing in enumerate(self.crossings):
+                randomized_start_region = randint(0,3)
+                for i in range(randomized_start_region,randomized_start_region+4):
+                    region_id = i % 4
+                    region = self.get_region(crossing_id,region_id)
+                    if segment in region.bounding_segments:
+                        continue
+                    if region in marked_regions:
+                        continue
+                    marked_regions.append(region)
+                    marker_positions.append(region_id)
+                    break
+        if len(marker_positions) != self.number_of_crossings:
+            raise ValueError("Not all crossings have a marker position")
+        return KauffmanState.from_marker_positions(self, marker_positions)
+
+    def get_kstate_bruteforce(self,segment):
+        """
+        Get a Kauffman state of the knot diagram with no markers in the regions adjacent to the segment
+        """
+        # list of marker positions
+        marker_positions = [0]*self.number_of_crossings
+        while not KauffmanState._is_valid_state(self,marker_positions, segment):
+            # increment marker positions
+            for i in range(self.number_of_crossings):
+                x = (marker_positions[i]+1)%4
+                if x != 0:
+                    break
+
+        return KauffmanState.from_marker_positions(self, marker_positions)
+                    
+
 
     def get_knot_description(self):
         return f"Crossings: {self.number_of_crossings}, Regions: {self.number_of_regions}, Segments: {self.number_of_segments}"

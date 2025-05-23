@@ -1,6 +1,7 @@
 import unittest
 from src.knotdiagram import KnotDiagram,Crossing, Region
-from src.kstate import KauffmanState
+from src.kstate import KauffmanState, StateNode
+from src.lattice import StateLattice
 
 
 class TestTrefoilKnotDiagram(unittest.TestCase):
@@ -60,5 +61,24 @@ class TestKauffmanState(unittest.TestCase):
         with self.assertRaises(ValueError):
             KauffmanState.from_marker_positions(self.diagram, marker_positions)
 
+
+class TestStateLattice(unittest.TestCase):
+    def setUp(self):
+        self.pd = [(6, 4, 1,3), (4, 2, 5, 1), (2, 6, 3, 5)]
+        self.diagram = KnotDiagram(self.pd)
+        self.state_lattice = StateLattice(self.diagram)
+
+    def test_trefoil_min_state(self):
+        min_state = KauffmanState.from_marker_positions(self.diagram, [3,0,3])
+        self.assertEqual(self.state_lattice.get_minimal_state(1), min_state)
+
+class TestStateNode(unittest.TestCase):
+    def state_nodes(self):
+        list_of_nodes = [StateNode(None,"12341"), StateNode(None,"12342"), StateNode(None,"12343")]
+        self.assertEqual(StateNode(None,"11234") in list_of_nodes, True)
+
+    def not_in_state_node_list(self):
+        list_of_nodes = [StateNode(None,"12341"), StateNode(None,"12342"), StateNode(None,"12343")]
+        self.assertEqual(StateNode(None,"123411") in list_of_nodes, False)
 if __name__=="__main__":
     unittest.main()
