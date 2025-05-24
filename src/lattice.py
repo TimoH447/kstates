@@ -1,4 +1,5 @@
 from src.kstate import StateNode
+from src.kstate import TranspositionSequence
 
 class StateLattice:
     def __init__(self, diagram):
@@ -20,6 +21,15 @@ class StateLattice:
                     state = state.transpose(segment,"cw")
                     made_transposition = True
         return state
+
+    def get_node_by_transpositions(self, transpositions_string):
+        """
+        Get a node by its name.
+        """
+        for node in self.nodes:
+            if node.transpositions == TranspositionSequence(transpositions_string):
+                return node
+        return None
 
     def get_maximal_state(self,fixed_segment):
         """
@@ -62,18 +72,14 @@ class StateLattice:
             polynomial.append(monomial)
         return polynomial
 
-
-
-
-
-    def create_node(self, state, previous_node_name, transposition):
+    def create_node(self, state, previous_node_transpositions, transposition):
         """
         Add a node to the lattice and return the node.
         """
-        if previous_node_name == "":
+        if previous_node_transpositions == "":
             node = StateNode(state, str(transposition))
         else:
-            node = StateNode(state, previous_node_name +","+ str(transposition))
+            node = StateNode(state, previous_node_transpositions +","+ str(transposition))
         return node
 
     def build_lattice(self,segment):
@@ -91,7 +97,7 @@ class StateLattice:
             possible_transpositions = node.state.get_all_possible_transpositions("ccw")
             for transposition in possible_transpositions:
                 next_state = node.state.transpose(transposition,"ccw")
-                new_node = self.create_node(next_state, node.name, transposition)
+                new_node = self.create_node(next_state, node.transpositions.string, transposition)
                 if new_node not in queue:
                     queue.append(new_node)
                     self.nodes.append(new_node)
@@ -109,7 +115,7 @@ class StateLattice:
         """
         Print the state lattice.
         """
-        state_names = [node.name.split(",") for node in self.nodes]
+        state_names = [node.transpositions.string.split(",") for node in self.nodes]
         state_names.sort(key=lambda x: len(x))
         state_names = [",".join(name) for name in state_names]
         print(state_names)

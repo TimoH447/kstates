@@ -5,9 +5,8 @@ class LatticeImage:
     """
     Class to handle the creation of an image representation of a knot lattice.
     """
-    def __init__(self, states, eges, image_size=(512, 1024)):
-        self.states = states
-        self.edges = eges
+    def __init__(self, lattice, image_size=(512, 1024)):
+        self.lattice = lattice
         self.image_size = image_size
 
     def set_image_size(self, width, height):
@@ -16,8 +15,6 @@ class LatticeImage:
     def draw_lattice(self):
         im = Image.new('1', self.image_size, "white")
         draw = ImageDraw.Draw(im)
-        for edge in self.edges:
-            pass
 
 def node_coordinate_to_img_position(node_coordinate, layer_length, layer_width, padding_x, padding_y):
     """
