@@ -1,5 +1,9 @@
 from src.knotdiagram import KnotDiagram
 from src.lattice import StateLattice
+from src.visualize import draw_lattice
+
+from PIL import Image
+
 
 def main():
     # Example: Trefoil knot in PD notation
@@ -45,16 +49,19 @@ def main():
         (5,11,4,12),
         (3,19,2,20)
     ]
-    diagram = KnotDiagram(link_pd)
+
+    diagram = KnotDiagram(fig_8)
 
     lattice = StateLattice(diagram)
-    min_state = lattice.get_minimal_state(22)
-    print(min_state)
-    print(min_state.get_all_possible_transpositions("ccw"))
-
     lattice.build_lattice(1)
+
     print(len(lattice.nodes))
-    print(lattice.nodes)
+    print(lattice.print_lattice())
+    i= lattice.nodes.index(lattice.edges[1][1])
+    print(lattice.get_depth())
+
+    draw_lattice(lattice.nodes, lattice.edges)
 
 if __name__ == "__main__":
     main()
+

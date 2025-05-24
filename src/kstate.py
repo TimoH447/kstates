@@ -1,20 +1,27 @@
 class StateNode:
-    def __init__(self, state, id):
+    def __init__(self, state, name):
         self.state = state
-        self.id = id
+        self.name = name
+        self.position = None
+
+    def get_length(self):
+        if self.name=="":
+            return 0
+        else:
+            return len(self.name.split(","))
 
     def __eq__(self, value):
         if not isinstance(value, StateNode):
             return False
-        transpositions_a = self.id.split(",")
-        transpositions_b = value.id.split(",")
+        transpositions_a = self.name.split(",")
+        transpositions_b = value.name.split(",")
         for i in range(1,2*len(self.state.marker_positions)+1):
             if transpositions_a.count(str(i)) != transpositions_b.count(str(i)):
                 return False
         return True
 
     def __repr__(self):
-        return f"StateNode({self.id})"
+        return f"({self.name})"
 
         
 class KauffmanState:

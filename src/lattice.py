@@ -66,14 +66,14 @@ class StateLattice:
 
 
 
-    def create_node(self, state, previous_node_id, transposition):
+    def create_node(self, state, previous_node_name, transposition):
         """
         Add a node to the lattice and return the node.
         """
-        if previous_node_id == "":
+        if previous_node_name == "":
             node = StateNode(state, str(transposition))
         else:
-            node = StateNode(state, previous_node_id +","+ str(transposition))
+            node = StateNode(state, previous_node_name +","+ str(transposition))
         return node
 
     def build_lattice(self,segment):
@@ -81,8 +81,8 @@ class StateLattice:
         Build the state lattice for the given knot diagram.
         """
         minimal_state = self.get_minimal_state(segment)
-        min_id = ""
-        node = StateNode(minimal_state,min_id)
+        min_name = ""
+        node = StateNode(minimal_state,min_name)
         queue = [node]
         self.nodes.append(node)
 
@@ -91,14 +91,27 @@ class StateLattice:
             possible_transpositions = node.state.get_all_possible_transpositions("ccw")
             for transposition in possible_transpositions:
                 next_state = node.state.transpose(transposition,"ccw")
-                new_node = self.create_node(next_state, node.id, transposition)
-                print(new_node)
-                print(new_node in queue)
+                new_node = self.create_node(next_state, node.name, transposition)
                 if new_node not in queue:
                     queue.append(new_node)
                     self.nodes.append(new_node)
-                    self.edges.append((node.id, new_node.id, transposition))
+                    self.edges.append((node, new_node, transposition))
                 else:
-                    print(f"Node {new_node} already exists in the queue.")
-                    self.edges.append((node.id, new_node.id, transposition))
+                    self.edges.append((node, new_node, transposition))
+
+    def get_depth(self):
+        """
+        Depth of the lattice, lattice build method has to be called first
+        """
+        return self.nodes[-1].get_length()
+
+    def print_lattice(self):
+        """
+        Print the state lattice.
+        """
+        state_names = [node.name.split(",") for node in self.nodes]
+        state_names.sort(key=lambda x: len(x))
+        state_names = [",".join(name) for name in state_names]
+        print(state_names)
+
 
