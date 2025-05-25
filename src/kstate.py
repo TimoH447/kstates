@@ -1,27 +1,45 @@
+class TranspositionSequence:
+    def __init__(self,string):
+        self.string = string
+
+    def get_length(self):
+        if self.string =="":
+            return 0
+        else:
+            return len(self.string.split(","))
+
+    def __eq__(self, value):
+        if not isinstance(value, TranspositionSequence):
+            return False
+        transpositions_a = self.string.split(",")
+        transpositions_b = value.string.split(",")
+        for transposition in transpositions_a:
+            if transposition not in transpositions_b:
+                return False
+            transpositions_b.remove(transposition)
+        if 0 != len(transpositions_b):
+            return False
+        return True
+
+        
 class StateNode:
-    def __init__(self, state, name):
+    def __init__(self, state, transposition_string):
         self.state = state
-        self.name = name
+        self.transpositions = TranspositionSequence(transposition_string)
         self.position = None
 
     def get_length(self):
-        if self.name=="":
-            return 0
-        else:
-            return len(self.name.split(","))
+        return self.transpositions.get_length()
 
     def __eq__(self, value):
         if not isinstance(value, StateNode):
             return False
-        transpositions_a = self.name.split(",")
-        transpositions_b = value.name.split(",")
-        for i in range(1,2*len(self.state.marker_positions)+1):
-            if transpositions_a.count(str(i)) != transpositions_b.count(str(i)):
-                return False
+        if value.transpositions != self.transpositions:
+            return False
         return True
 
     def __repr__(self):
-        return f"({self.name})"
+        return f"({self.transpositions.string})"
 
         
 class KauffmanState:

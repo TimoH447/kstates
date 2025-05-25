@@ -1,6 +1,6 @@
 from src.knotdiagram import KnotDiagram
 from src.lattice import StateLattice
-from src.visualize import draw_lattice
+from src.visualize import LatticeImage
 
 from PIL import Image
 
@@ -50,7 +50,7 @@ def main():
         (3,19,2,20)
     ]
 
-    diagram = KnotDiagram(fig_8)
+    diagram = KnotDiagram(knot_8_8)
 
     lattice = StateLattice(diagram)
     lattice.build_lattice(1)
@@ -60,7 +60,8 @@ def main():
     i= lattice.nodes.index(lattice.edges[1][1])
     print(lattice.get_depth())
 
-    draw_lattice(lattice.nodes, lattice.edges)
+    lattice_image = LatticeImage(lattice, image_size=(512, 1024), padding=(10, 20), text_size=9)
+    lattice_image.draw_lattice()
 
 if __name__ == "__main__":
     main()
