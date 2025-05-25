@@ -1,6 +1,7 @@
 from src.kstate import StateNode
 from src.kstate import TranspositionSequence
 
+# TODO initialize state latice with fixed segment
 class StateLattice:
     def __init__(self, diagram):
         self.diagram = diagram
@@ -110,6 +111,12 @@ class StateLattice:
         Depth of the lattice, lattice build method has to be called first
         """
         return self.nodes[-1].get_length()
+
+    def get_nodes_in_layer(self, layer_number):
+        """
+        Get all nodes in a specific layer of the lattice.
+        """
+        return [node for node in self.nodes if node.get_length() == layer_number]
 
     def print_lattice(self):
         """
