@@ -3,17 +3,18 @@ from src.kstate import TranspositionSequence
 
 # TODO initialize state latice with fixed segment
 class StateLattice:
-    def __init__(self, diagram):
+    def __init__(self, diagram, fixed_segment):
         self.diagram = diagram
+        self.fixed_segment = fixed_segment
         self.nodes = []
         self.state_count = 0
         self.edges = []
 
-    def get_minimal_state(self,segment):
+    def get_minimal_state(self):
         """
         Get the minimal state in the lattice.
         """
-        state = self.diagram.get_kstate_greedy_randomized(segment,1000)
+        state = self.diagram.get_kstate_greedy_randomized(self.fixed_segment,1000)
         made_transposition = True
         while made_transposition:
             made_transposition = False
@@ -32,11 +33,11 @@ class StateLattice:
                 return node
         return None
 
-    def get_maximal_state(self,fixed_segment):
+    def get_maximal_state(self):
         """
         Get the maximal state in the lattice.
         """
-        state = self.diagram.get_kstate_greedy_randomized(fixed_segment,1000)
+        state = self.diagram.get_kstate_greedy_randomized(self.fixed_segment,1000)
         made_transposition = True
         while made_transposition:
             made_transposition = False
@@ -46,11 +47,11 @@ class StateLattice:
                     made_transposition = True
         return state
 
-    def get_sequence_min_to_max(self,fixed_segment):
+    def get_sequence_min_to_max(self):
         """
         Get a sequence of transpositions from the minimal state to the maximal state.
         """
-        state = self.get_minimal_state(fixed_segment)
+        state = self.get_minimal_state()
         sequence_of_transpositions = []
         made_transposition = True
         while made_transposition:
@@ -83,11 +84,11 @@ class StateLattice:
             node = StateNode(state, previous_node_transpositions +","+ str(transposition))
         return node
 
-    def build_lattice(self,segment):
+    def build_lattice(self):
         """
         Build the state lattice for the given knot diagram.
         """
-        minimal_state = self.get_minimal_state(segment)
+        minimal_state = self.get_minimal_state()
         min_name = ""
         node = StateNode(minimal_state,min_name)
         queue = [node]

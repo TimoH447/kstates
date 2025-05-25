@@ -52,8 +52,8 @@ def main():
 
     diagram = KnotDiagram(knot_8_8)
 
-    lattice = StateLattice(diagram)
-    lattice.build_lattice(1)
+    lattice = StateLattice(diagram,1)
+    lattice.build_lattice()
 
     print(len(lattice.nodes))
     print(lattice.print_lattice())
