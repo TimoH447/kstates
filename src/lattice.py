@@ -65,14 +65,34 @@ class StateLattice:
 
     def get_f_polynomial(self):
         polynomial = []
-        for segment in self.diagram.segments:
-            monomial = []
-            seq_of_transpositions = self.get_sequence_min_to_max(segment)
-            for seg in self.diagram.segments:
-                number_of_occurrences = seq_of_transpositions.count(seg)
-                monomial.append(number_of_occurrences)
-            polynomial.append(monomial)
-        return polynomial
+        for node in self.nodes:
+            term =[0] + [0]*self.diagram.number_of_segments
+            polynomial.append(node.transpositions.get_transposition_count(term))
+        return polynomial 
+
+    def get_f_polynomial_latex(self):
+        """
+        Get the f-polynomial of the lattice in LaTeX format.
+        """
+        polynomial = self.get_f_polynomial()
+        f_polynomial_latex = "1"
+        for summand in polynomial:
+            term_latex_string = ""
+            if summand[0]==0:
+                for i, count in enumerate(summand):
+                    if count > 1:
+                        term_latex_string += f"y_{{{i}}}^{count}"
+                    elif count == 1:
+                        term_latex_string += f"y_{{{i}}}"
+                f_polynomial_latex += " + " + term_latex_string
+        return f_polynomial_latex
+
+        for i, count in enumerate(polynomial):
+            if count > 0:
+                term = f"{count}x_{i}"
+                latex_terms.append(term)
+        return " + ".join(latex_terms) if latex_terms else "0"
+                
 
     def create_node(self, state, previous_node_transpositions, transposition):
         """

@@ -67,7 +67,7 @@ def main():
         (3,19,2,20)
     ]
 
-    diagram = KnotDiagram(k16)
+    diagram = KnotDiagram(fig_8)
 
     lattice = StateLattice(diagram,1)
     lattice.build_lattice()
@@ -75,9 +75,9 @@ def main():
     print(len(lattice.nodes))
     i= lattice.nodes.index(lattice.edges[1][1])
     print(lattice.get_depth())
+    print(lattice.get_f_polynomial_latex())
 
     lattice_image = LatticeImage(lattice, image_size=(1024, 2048), padding=(10, 20), text_size=6)
-    lattice_image.draw_lattice()
 
 if __name__ == "__main__":
     main()

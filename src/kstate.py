@@ -8,6 +8,23 @@ class TranspositionSequence:
         else:
             return len(self.string.split(","))
 
+    def get_transposition_count(self, segment_list):
+        """
+        segment_list: list as long as the number of segments in the diagram plus 1, filled with ceros., 
+        Returns a list containing how often each segment was transposed.
+        entry i is the number of transpositions at segment i.
+        entry 0 is alwys 0, only if there are no transposition at all, then it is 1.
+        """
+        if self.get_length() == 0:
+            segment_list[0] = 1
+        else:
+            transposition_list = self.string.split(",")
+            for transposition in transposition_list:
+                segment = int(transposition)
+                segment_list[segment] += 1
+        return segment_list
+
+
     def __eq__(self, value):
         if not isinstance(value, TranspositionSequence):
             return False
