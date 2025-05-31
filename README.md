@@ -22,17 +22,18 @@ We want an API that our front end can call and returns the image of the Kauffman
 
     To access the API later from our front end on a different domain, the lambda function has to return the required CORS (cross-origin-resource-sharing) headears:
     ```
-    import json
-    def lambda_handler(event, context):
+    method = event['requestContext']['http']['method']
+    if method == 'OPTIONS':
         return {
             'statusCode': 200,
             'headers': {
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Origin': 'https://www.example.com',
-                'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
             },
-            'body': json.dumps('Hello from Lambda!')
-    }```
+            'body': ''
+        }
+    ```
     
 2. AWS Gateway:
 
@@ -42,4 +43,5 @@ Invoking Lambda function:    https://docs.aws.amazon.com/lambda/latest/dg/servic
 ## Frontend
 1. S3 bucket
 2. Cloudfront
+3. CI: https://github.com/marketplace/actions/sync-s3 
 

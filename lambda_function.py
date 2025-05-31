@@ -92,6 +92,7 @@ def upload_file(file_name, bucket, object_name=None):
 
 def parse_input(body):
     pd_notation = body.get('pd_notation', None)
+    pd_notation = [tuple(crossing) for crossing in pd_notation] if pd_notation else None
     fixed_segment = body.get('fixed_segment', None)
     return (pd_notation, fixed_segment)
 
@@ -99,6 +100,18 @@ def lambda_handler(event, context):
     """
     AWS Lambda handler function.
     """
+    method = event['requestContext']['http']['method']
+    
+    if method == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            'body': ''
+        }
     body = json.loads(event.get('body', '{}'))
     pd_notation,fixed_segment = parse_input(body)
     filename = "lattice.png"
@@ -114,5 +127,10 @@ def lambda_handler(event, context):
     result['image_url'] = url
     return {
         'statusCode': 200,
+        'headers': {
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Origin': 'https://kstates.com',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
+        },
         'body': json.dumps(result)
     }

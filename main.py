@@ -3,7 +3,24 @@ from src.lattice import StateLattice
 from src.visualize import LatticeImage
 
 from PIL import Image
-
+k16 = [
+    (2,9,3,10),
+    (4,2,5,1),
+    (7,16,8,17),
+    (8,3,9,4),
+    (10,6,11,5),
+    (11,21,12,20),
+    (13,25,14,24),
+    (15,6,16,7),
+    (17,1,18,32),
+    (19,28,20,29),
+    (21,15,22,14),
+    (23,30,24,31),
+    (25,13,26,12),
+    (27,18,28,19),
+    (29,26,30,27),
+    (31,22,32,23)
+]
 
 def main():
     # Example: Trefoil knot in PD notation
@@ -50,17 +67,16 @@ def main():
         (3,19,2,20)
     ]
 
-    diagram = KnotDiagram(knot_8_8)
+    diagram = KnotDiagram(k16)
 
     lattice = StateLattice(diagram,1)
     lattice.build_lattice()
 
     print(len(lattice.nodes))
-    print(lattice.print_lattice())
     i= lattice.nodes.index(lattice.edges[1][1])
     print(lattice.get_depth())
 
-    lattice_image = LatticeImage(lattice, image_size=(512, 1024), padding=(10, 20), text_size=9)
+    lattice_image = LatticeImage(lattice, image_size=(1024, 2048), padding=(10, 20), text_size=6)
     lattice_image.draw_lattice()
 
 if __name__ == "__main__":
