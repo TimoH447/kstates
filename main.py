@@ -70,7 +70,7 @@ def main():
 
     print(len(lattice.nodes))
     i= lattice.nodes.index(lattice.edges[1][1])
-    print(lattice.get_minimal_state())
+    print(str(lattice.get_minimal_state()))
     print(lattice.get_f_polynomial_latex())
     print(lattice.get_alexander_polynomial_latex())
 

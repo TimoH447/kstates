@@ -12,22 +12,22 @@ from src.visualize import LatticeImage
 from src.lattice import StateLattice
 from src.knotdiagram import KnotDiagram
             
-def compute_lattice_data(parsed_pd_notation,fixed_segment,filename):
+def compute_lattice_data(parsed_pd_notation,fixed_segment,filename=None):
     """
     Compute the state lattice for a given knot diagram and fixed segment, and generate an image of the lattice.
     """
     diagram = KnotDiagram(parsed_pd_notation)
     lattice = StateLattice(diagram,fixed_segment)
-    lattice_image = LatticeImage(lattice, image_size=(512, 1024), padding=(10, 20), text_size=9)
-    lattice_image.draw_lattice(filename)
+    if filename:
+        lattice_image = LatticeImage(lattice, image_size=(512, 1024), padding=(10, 20), text_size=9)
+        lattice_image.draw_lattice(filename)
     results = {
         "number_of_states": len(lattice.nodes),
         "f_polynomial": lattice.get_f_polynomial_latex(),
         "alexander_polynomial": lattice.get_alexander_polynomial_latex(),
         "minimal_state": str(lattice.get_minimal_state()),
         "maximal_state": str(lattice.get_maximal_state()),
-        "sequence_min_to_max": lattice.get_sequence_min_to_max(),
-        
+        "sequence_min_to_max": str(lattice.get_sequence_min_to_max()),
     }
     return results
 
@@ -83,19 +83,31 @@ def lambda_handler(event, context):
     # parsing the body of the event
     body = json.loads(event.get('body', '{}'))
     pd_notation,fixed_segment = parse_input(body)
+    number_of_crossings = len(pd_notation) if pd_notation else 0
+    
+    if number_of_crossings > 20:
+        return {
+            'statusCode': 400,
+            'body': json.dumps({
+                'error': 'Too many crossings. Please provide a knot with 20 or fewer crossings.'
+            }),
+        }
 
     # calculate the lattice and generate the image 
-    result = compute_lattice_data(pd_notation, fixed_segment, '/tmp/'+filename)
+    if number_of_crossings > 11:
+        result = compute_lattice_data(pd_notation, fixed_segment)
+    else:
+        result = compute_lattice_data(pd_notation, fixed_segment, filename)
 
-    #upload lattice image to S3
-    upload_file('/tmp/'+ filename , bucket ,filename)
-    # Generate URL valid for 5 minutes
-    s3 = boto3.client('s3')
-    url = s3.generate_presigned_url('get_object', 
-        Params={'Bucket': bucket, 'Key': filename},
-        ExpiresIn=300
-    )
-    result['image_url'] = url
+        #upload lattice image to S3
+        upload_file('/tmp/'+ filename , bucket ,filename)
+        # Generate URL valid for 5 minutes
+        s3 = boto3.client('s3')
+        url = s3.generate_presigned_url('get_object', 
+            Params={'Bucket': bucket, 'Key': filename},
+            ExpiresIn=300
+        )
+        result['image_url'] = url
 
     return {
         'statusCode': 200,
