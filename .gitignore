@@ -1,3 +1,23 @@
+# package stuff
+bin/
+boto3/
+boto3-1.38.27.dist-info/
+botocore/
+botocore-1.38.27.dist-info/
+dateutil/
+jmespath/
+jmespath-1.0.1.dist-info/
+PIL/
+pillow-11.2.1.dist-info/
+pillow.libs/
+python_dateutil-2.9.0.post0.dist-info/
+s3transfer/
+s3transfer-0.13.0.dist-info/
+six-1.17.0.dist-info/
+urllib3/
+urllib3-2.4.0.dist-info/
+six.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

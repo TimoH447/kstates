@@ -15,7 +15,7 @@ We want an API that our front end can call and returns the image of the Kauffman
 1. Create Lambda Function:
 
     To use the Pillow and Boto3 package in Aws Lambda, add the packages to this folder with the command:
-    pip install --platform manylinux2014_x86_64 --target=dir_name --implementation cp --python-version 3.13 --only-binary=:all: --upgrade Pillow boto3 
+    pip install --platform manylinux2014_x86_64 --target=kstates --implementation cp --python-version 3.13 --only-binary=:all: --upgrade Pillow boto3 
     And add permissions to the lambda function to write to S3
 
     We keep the bucket with the lattice images private and return instead pre signed links with which one can access a specific image for 5 minutes.
