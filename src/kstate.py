@@ -186,5 +186,5 @@ class KauffmanState:
         return hash(frozenset(self.marker_positions.items()))
 
     def __repr__(self):
-        return f"KauffmanState({{ {', '.join(f'{k}: {k.first_region_segment(v),k.second_region_segment(v)}' for k,v in self.marker_positions.items())} }})"
+        return f"{', '.join(f'{k}: {k.first_region_segment(v),k.second_region_segment(v)}' for k,v in self.marker_positions.items())}"
 
