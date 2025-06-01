@@ -85,6 +85,29 @@ class KnotDiagram:
         self.number_of_regions = self.number_of_crossings + 2
         self.number_of_segments = 2*self.number_of_crossings
         self.segments = [i+1 for i in range(self.number_of_segments)]
+
+    def is_segment_from_under_to_over(self, segment):
+        """
+        This method returns True if the segment goes from an under-crossing to an over-crossing."""
+        segment_positions = [crossing.segments.index(segment) for crossing in self.crossings if segment in crossing.segments]
+        if not 2 in segment_positions:
+            return False
+        segment_positions.remove(2)
+        if segment_positions[0] == 1 or segment_positions[0] == 3:
+            return True
+        return False
+
+    def is_segment_from_over_to_under(self, segment):
+        """
+        This method returns True if the segment goes from an over-crossing to an under-crossing."""
+        segment_positions = [crossing.segments.index(segment) for crossing in self.crossings if segment in crossing.segments]
+        if not 0 in segment_positions:
+            return False
+        segment_positions.remove(0)
+        if segment_positions[0] == 1 or segment_positions[0] == 3:
+            return True
+        return False
+
     
     def get_region(self, crossing_id, region_id):
         """

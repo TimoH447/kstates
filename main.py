@@ -40,13 +40,13 @@ def main():
     ]
     knot_8_8 = [
         (1,7,2,6),
-        (2,5,3,6),
-        (5,12,4,11),
-        (4,10,3,11),
-        (1,8,16,7),
-        (16,13,15,12),
+        (3,11,4,10),
+        (5,3,6,2),
+        (7,1,8,16),
+        (9,14,10,15),
+        (11,5,12,4),
         (13,8,14,9),
-        (14,10,15,9)
+        (15,12,16,13)
     ]
     fig_8=[
         (4,8,3,1),
@@ -67,15 +67,16 @@ def main():
         (3,19,2,20)
     ]
 
-    diagram = KnotDiagram(fig_8)
+    diagram = KnotDiagram(k16)
 
-    lattice = StateLattice(diagram,1)
+    lattice = StateLattice(diagram,3)
     lattice.build_lattice()
 
     print(len(lattice.nodes))
     i= lattice.nodes.index(lattice.edges[1][1])
     print(lattice.get_depth())
     print(lattice.get_f_polynomial_latex())
+    print(lattice.get_alexander_polynomial_latex())
 
     lattice_image = LatticeImage(lattice, image_size=(1024, 2048), padding=(10, 20), text_size=6)
 
