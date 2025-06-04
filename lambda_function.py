@@ -97,7 +97,7 @@ def lambda_handler(event, context):
     if number_of_crossings > 11:
         result = compute_lattice_data(pd_notation, fixed_segment)
     else:
-        result = compute_lattice_data(pd_notation, fixed_segment, filename)
+        result = compute_lattice_data(pd_notation, fixed_segment,'/tmp/'+ filename)
 
         #upload lattice image to S3
         upload_file('/tmp/'+ filename , bucket ,filename)
