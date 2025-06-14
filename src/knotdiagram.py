@@ -87,6 +87,7 @@ class KnotDiagram:
         """
         pd_notation: knot diagram in pd notation, for each crossing a 4-tuple
         """
+        self.pd_notation = pd_notation
         self.crossings = [Crossing(segments) for segments in pd_notation]
         self.number_of_crossings = len(pd_notation)
         self.number_of_regions = self.number_of_crossings + 2
@@ -98,6 +99,19 @@ class KnotDiagram:
         for crossing in self.crossings:
             knot_string += str(crossing)  + "\n"
         return knot_string
+
+    def get_pd_notation(self):
+        return self.pd_notation
+
+    def get_quiver_notation_qpa(self):
+        number_of_vertices = str(self.number_of_crossings*2)
+        arrows = []
+        for crossing in self.pd_notation:
+            for i in range(4):
+                arrows.append([crossing[i],crossing[-1]])
+        arrows = str(arrows)
+
+        return f"Quiver( {number_of_vertices}, {arrows})"
     
     def get_region(self, crossing_id, region_id):
         """
@@ -176,6 +190,7 @@ class KnotDiagram:
         # marked regions
         marked_regions = []
         while retries > 0 and len(marker_positions) != self.number_of_crossings:
+            retries -= 1
             marker_positions = []
             marked_regions = []
             for crossing_id,crossing in enumerate(self.crossings):

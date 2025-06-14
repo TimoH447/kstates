@@ -1,6 +1,8 @@
 from src.knotdiagram import KnotDiagram
 from src.lattice import StateLattice
 from src.visualize import LatticeImage
+from src.algebra import JacobianAlgebra
+from src.two_bridge_knots import TwoBridgeKnot
 
 from PIL import Image
 k16 = [
@@ -76,6 +78,18 @@ def main():
 
     lattice_image = LatticeImage(lattice, image_size=(1024, 2048), padding=(10, 20), text_size=6)
 
+    trefoil_pd = [(6, 4, 1,3), (4, 2, 5, 1), (2, 6, 3, 5)]
+    jac = JacobianAlgebra._from_pd_notation(trefoil_pd)
+    print(jac.get_equivalent_paths([(3,1),(1,4),(4,6),(6,3)]))
+
 if __name__ == "__main__":
-    main()
+    knot = TwoBridgeKnot([2,1])
+    print(knot)
+    print(knot.get_pd_notation())
+    diagram = KnotDiagram(knot.get_pd_notation())
+    print(diagram.get_quiver_notation_qpa())
+    lattice = StateLattice(diagram,1)
+    print(lattice.get_alexander_polynomial_latex())
+
+    lattice_image = LatticeImage(lattice, image_size=(1024, 2048), padding=(10, 20), text_size=6)
 
