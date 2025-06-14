@@ -11,6 +11,7 @@ import PIL.Image
 from src.visualize import LatticeImage
 from src.lattice import StateLattice
 from src.knotdiagram import KnotDiagram
+from src.two_bridge_knots import TwoBridgeKnot
             
 def compute_lattice_data(parsed_pd_notation,fixed_segment,filename=None):
     """
@@ -53,11 +54,29 @@ def upload_file(file_name, bucket, object_name=None):
         return False
     return True
 
-def parse_input(body):
-    pd_notation = body.get('pd_notation', None)
+def parse_pd_input(body):
+    pd_notation = body.get('knot_input', None)
     pd_notation = [tuple(crossing) for crossing in pd_notation] if pd_notation else None
     fixed_segment = body.get('fixed_segment', None)
     return (pd_notation, fixed_segment)
+
+def parse_tb_input(body):
+    tb_notation = body.get('knot_input')
+    tb_notation = tb_notation.split(",")
+    tb_notation = list(map(int,tb_notation))
+    tb_knot = TwoBridgeKnot(tb_notation)
+    pd_notation = tb_knot.get_pd_notation()
+    fixed_segment = body.get('fixed_segment', None)
+    return pd_notation,fixed_segment
+
+
+def parse_input(body):
+    notation_type = body.get('notation_type','pd')
+    if notation_type == 'tb':
+        pd_notation, fixed_segment = parse_tb_input(body)
+    else:
+        pd_notation,fixed_segment = parse_pd_input(body)
+    return notation_type,pd_notation,fixed_segment 
 
 def lambda_handler(event, context):
     """
