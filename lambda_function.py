@@ -76,7 +76,7 @@ def parse_input(body):
         pd_notation, fixed_segment = parse_tb_input(body)
     else:
         pd_notation,fixed_segment = parse_pd_input(body)
-    return notation_type,pd_notation,fixed_segment 
+    return pd_notation,fixed_segment 
 
 def lambda_handler(event, context):
     """

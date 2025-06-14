@@ -9,7 +9,7 @@ cp -r src/ deploy/
 cp lambda_function.py deploy/
 
 # Install dependencies into deploy folder
-pip install -r requirements.txt -t deploy/
+pip install --target deploy/ pillow --platform manylinux2014_x86_64 --only-binary=:all: --upgrade
 
 # Zip the package
 cd deploy
