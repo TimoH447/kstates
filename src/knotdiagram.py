@@ -32,6 +32,20 @@ class Crossing:
     def get_segment(self,segment_no):
         return self.segments[segment_no]
 
+    def get_sign(self):
+        a = self.segments[1]
+        b = self.segments[3]
+        if abs(a-b)==1:
+            if a>b:
+                return 1
+            else:
+                return -1
+        else:
+            if a>b:
+                return -1
+            else:
+                return 1
+
     def __repr__(self):
         return f"Crossing {self.segments}"
     
@@ -102,6 +116,20 @@ class KnotDiagram:
 
     def get_pd_notation(self):
         return self.pd_notation
+    
+    def get_crossings_containing_segment(self,segment):
+        crossing_containg_the_segment = []
+        for crossing in self.crossings:
+            if segment in crossing.segments:
+                crossing_containg_the_segment.append(crossing)
+        return crossing_containg_the_segment
+
+    def get_twist_number(self):
+        twist = 0
+        for crossing in self.crossings:
+            twist += crossing.get_sign()
+        return twist
+
 
     def get_quiver_notation_qpa(self):
         number_of_vertices = str(self.number_of_crossings*2)

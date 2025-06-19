@@ -1,5 +1,6 @@
 from src.kstate import StateNode
 from src.kstate import TranspositionSequence
+import src.polynom
 
 class StateLattice:
     """
@@ -130,12 +131,31 @@ class StateLattice:
                     made_transposition = True
         return sequence_of_transpositions
 
+    def get_alexander_specialization(self):
+        """
+        returns a list for each variable in the f polynom, i.e. number of segments many laurent polynom
+        that can be later inserted in the f polynom, 
+        e.g. if the f polynom has 4 variables:
+        [ [[1,2]], [[1,0]], [[1,0]], [[-1,0],[1,1]] ] = (t^2,1,1,-1+t)
+        """
+        specialization = []
+        for segment in self.diagram.segments:
+            if self.diagram.is_segment_from_under_to_over(segment):
+                specialization.append([[-1,1]])
+            elif self.diagram.is_segment_from_over_to_under(segment):
+                specialization.append([[-1,-1]])
+            else:
+                specialization.append([[1,0]])
+        return specialization
+
     def get_f_polynomial(self):
         polynomial = []
         for node in self.nodes:
             term =[0] + [0]*self.diagram.number_of_segments
             polynomial.append(node.transpositions.get_transposition_count(term))
         return polynomial 
+    
+
 
     def get_f_polynomial_latex(self):
         """
@@ -154,45 +174,16 @@ class StateLattice:
                 f_polynomial_latex += " + " + term_latex_string
         return f_polynomial_latex
 
-    def get_f_pol_specialization(self):
-        """
-        Get the specialization of the f-polynomial which is equal to the Alexander polynomial.
-        """
-        polynomial = self.get_f_polynomial()
-        specialized_polynomial = []
-        for summand in polynomial:
-            if summand[0] == 1:
-                specialized_polynomial.append([1,0])
-            else:
-                term = []
-                t_power = 0
-                for i, count in enumerate(summand):
-                    if self.diagram.is_segment_from_under_to_over(i):
-                        t_power += count
-                    elif self.diagram.is_segment_from_over_to_under(i):
-                        t_power -= count
-                sign = sum(summand) % 2
-                if sign == 0:
-                    term = [1, t_power]
-                else: 
-                    term = [-1, t_power]
-                specialized_polynomial.append(term)
-        return specialized_polynomial
-
     def get_alexander_polynomial(self):
-        """
-        Get the Alexander polynomial of the lattice.
-        """
-        specialized_polynomial = self.get_f_pol_specialization()
-        alexander_polynomial = []
-        for summand in specialized_polynomial:
-            if any(term[1] == summand[1] for term in alexander_polynomial):
-                for term in alexander_polynomial:
-                    if term[1] == summand[1]:
-                        term[0] += summand[0]
-            else:
-                alexander_polynomial.append(summand)
-        return alexander_polynomial
+        f_poly = self.get_f_polynomial()
+        specialization = self.get_alexander_specialization()
+        alex_pol = src.polynom.multivariable_to_laurent(f_poly,specialization)
+        return alex_pol
+
+    def get_specialized_f_pol(self,specialization):
+        f_poly = self.get_f_polynomial()
+        spec_poly = src.polynom.multivariable_to_laurent(f_poly,specialization)
+        return spec_poly
     
     def get_alexander_polynomial_latex(self):
         """
