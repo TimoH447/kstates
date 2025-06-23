@@ -136,5 +136,6 @@ class StateLattice:
         for node in self.nodes:
             term =[0] + [0]*self.diagram.number_of_segments
             polynomial.append(node.transpositions.get_transposition_count(term))
+        print(polynomial)
         return src.polynom.MultivariatePolynom(polynomial)
     

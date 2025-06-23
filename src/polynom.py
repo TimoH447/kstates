@@ -35,6 +35,10 @@ class Polynom:
 
 class MultivariatePolynom(Polynom):
     def __init__(self,polynom):
+        """
+        Multivarate Polynom input is expected to be like:
+        [[coefficient, var_a_power, var_b_power,...]]
+        """
         self.polynom = polynom
 
     def to_latex(self):
@@ -45,12 +49,12 @@ class MultivariatePolynom(Polynom):
         polynomial_latex = "1"
         for summand in polynomial:
             term_latex_string = ""
-            if summand[0]==0:
-                for i, count in enumerate(summand):
+            if any([entry!=0 for entry in summand[1:]]):
+                for i, count in enumerate(summand[1:]):
                     if count > 1:
-                        term_latex_string += f"y_{{{i}}}^{count}"
+                        term_latex_string += f"y_{{{i+1}}}^{count}"
                     elif count == 1:
-                        term_latex_string += f"y_{{{i}}}"
+                        term_latex_string += f"y_{{{i+1}}}"
                 polynomial_latex += " + " + term_latex_string
         return polynomial_latex
 
