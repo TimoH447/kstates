@@ -3,7 +3,6 @@ from src.lattice import StateLattice
 from src.visualize import LatticeImage
 from src.algebra import JacobianAlgebra
 from src.two_bridge_knots import TwoBridgeDiagram
-from src.jonespolynom import JonesPolynom
 import src.jonespolynom
 
 from PIL import Image
@@ -98,10 +97,7 @@ if __name__ == "__main__":
     knot = TwoBridgeDiagram([3,2])
     pd_notation = knot.get_pd_notation()
     
-    jones = JonesPolynom(pd_notation)
-    print(jones.get_twist())
-    print(src.jonespolynom.get_summands_binomial_theorem(4))
-    print(f"Jones: {jones.get_kauffman_bracket()}")
+    print(f"Jones: {knot.get_kauffman_bracket()}")
 
     diagram = KnotDiagram(pd_notation)
     lattice = diagram.get_lattice(1)

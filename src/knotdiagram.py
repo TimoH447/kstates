@@ -2,6 +2,7 @@ from random import randint
 
 from src.kstate import KauffmanState
 from src.lattice import StateLattice
+from src.jonespolynom import get_binary, JonesState, binary_to_label, multiply_monomials, get_specialisation 
 
 class Region:
     def __init__(self,segments):
@@ -24,11 +25,12 @@ class Region:
         return f"Region {self.bounding_segments}"
     
 class Crossing:
-    def __init__(self, segments):
+    def __init__(self, segments, id_number = None):
         """
         segments: 4 segments of the crossing in counterclockwise order
         """
         self.segments= segments
+        self.id = id_number
 
     def get_segment(self,segment_no):
         return self.segments[segment_no]
@@ -103,7 +105,7 @@ class KnotDiagram:
         pd_notation: knot diagram in pd notation, for each crossing a 4-tuple
         """
         self.pd_notation = pd_notation
-        self.crossings = [Crossing(segments) for segments in pd_notation]
+        self.crossings = [Crossing(segments,i) for i,segments in enumerate(pd_notation)]
         self.number_of_crossings = len(pd_notation)
         self.number_of_regions = self.number_of_crossings + 2
         self.number_of_segments = 2*self.number_of_crossings
@@ -308,6 +310,26 @@ class KnotDiagram:
         f_pol = lattice.get_f_polynomial()
         specialization = self.get_alexander_specialization()
         return f_pol.specialize_to_laurent(specialization)
+
+    def get_kauffman_bracket(self):
+        labels = ["A","B"]
+        kauffman_bracket = []
+        for i in range(2**self.number_of_crossings):
+            binary = get_binary(i,self.number_of_crossings)
+            state_labels = list(map(binary_to_label,binary))
+            state = JonesState(state_labels)
+            state_polynom = state.get_monomial_of_state(self)
+            kauffman_bracket.append(state_polynom)
+        result = get_specialisation(kauffman_bracket)
+        twist = self.get_twist_number()
+        power = -3*twist
+        if abs(power)%2==0:
+            coefficient = 1
+        else:
+            coefficient = -1
+        mon = [coefficient,power]
+        result = list(map(multiply_monomials,result,[mon]*len(result)))
+        return result
 
     
     

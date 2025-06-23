@@ -1,8 +1,5 @@
 import math
 
-from src.knotdiagram import Crossing
-from src.knotdiagram import KnotDiagram
-
 def get_binary(i,n):
         binary = [0 for j in range(n)]
         if i==0:
@@ -66,37 +63,9 @@ def get_specialisation(polynom):
     result = simplify_laurent_polynom(specialisation)
     return result
 
-class JonesCrossing(Crossing):
-    def __init__(self,segments,label):
-        Crossing.__init__(self,segments)
-        self.label = label
-
-    def get_split(self):
-        segments = self.segments
-        if self.label == "A":
-            return [list(segments[:2]),list(segments[2:])]
-        elif self.label == "B":
-            return [list(segments[1:3]),[segments[3],segments[0]]]
-        raise ValueError("Jones Crossing got an unvalid label.")
-
-    def trace_split(self,segment):
-        split = self.get_split()
-        if segment in split[0]:
-            split[0].remove(segment)
-            next_segment = split[0][0]
-            return next_segment
-        elif segment in split[1]:
-            split[1].remove(segment)
-            next_segment = split[1][0]
-            return next_segment
-        raise ValueError("Cant trace segment in Jones States because it is not contained in the crossing.")
-
-
 class JonesState:
-    def __init__(self,labels,pd_notation,segments):
+    def __init__(self,labels):
         self.labels = labels
-        self.crossings = [JonesCrossing(segments,labels[i]) for i,segments in enumerate(pd_notation)]
-        self.segments = segments
 
     def get_number_of_A_labels(self):
         number_of_A_labels = 0
@@ -112,79 +81,59 @@ class JonesState:
                 number_of_B_labels +=1
         return number_of_B_labels
 
-    def get_crossings_containing_segment(self,segment):
-        crossing_containg_the_segment = []
-        for crossing in self.crossings:
-            if segment in crossing.segments:
-                crossing_containg_the_segment.append(crossing)
-        return crossing_containg_the_segment
+    def get_split(self,crossing):
+        segments = crossing.segments
+        if self.labels[crossing.id] == "A":
+            return [list(segments[:2]),list(segments[2:])]
+        elif self.labels[crossing.id] == "B":
+            return [list(segments[1:3]),[segments[3],segments[0]]]
+        raise ValueError("Jones Crossing got an unvalid label.")
 
-    def get_next_segment(self,segment, previous_segment):
-        crossings = self.get_crossings_containing_segment(segment)
-        crossing_1, crossing_2 = crossings[0],crossings[1]
-        other_segment_in_split_1 = crossing_1.trace_split(segment)
-        other_segment_in_split_2 = crossing_2.trace_split(segment)
-        if other_segment_in_split_1==other_segment_in_split_2:
-            return other_segment_in_split_2
-        if other_segment_in_split_1==previous_segment:
-            return other_segment_in_split_2
+    def get_next_segment(self,crossing,segment):
+        split = self.get_split(crossing)
+        if segment in split[0]:
+            split[0].remove(segment)
+            next_segment = split[0][0]
+            return next_segment
+        elif segment in split[1]:
+            split[1].remove(segment)
+            next_segment = split[1][0]
+            return next_segment
+        raise ValueError("Cant trace segment in Jones States because it is not contained in the crossing.")
+
+    def get_next_crossing(self,diagram, segment,previous_crossing):
+        crossings = diagram.get_crossings_containing_segment(segment)
+        if previous_crossing==crossings[0]:
+            return crossings[1]
         else:
-            return other_segment_in_split_1
+            return crossings[0]
 
-    def remove_segments_of_circle(self, segment_of_circle,segments):
+    def remove_segments_of_circle(self,diagram, segment_of_circle,segments):
+        previous_crossing = None
         segment = segment_of_circle
         segments.remove(segment)
-        next_segment = self.get_next_segment(segment,None)
+        next_crossing = self.get_next_crossing(diagram, segment, previous_crossing)
+        next_segment = self.get_next_segment(next_crossing,segment)
         while next_segment in segments:
             segments.remove(next_segment)
-            previous_segment = segment
+            previous_crossing = next_crossing
             segment = next_segment
-            next_segment = self.get_next_segment(segment,previous_segment)
+            next_crossing = self.get_next_crossing(diagram, segment, previous_crossing)
+            next_segment = self.get_next_segment(next_crossing,segment)
 
-    def get_number_of_circles_in_splitting(self):
+    def get_number_of_circles_in_splitting(self,diagram):
         number_of_circles = 0
-        segments = self.segments.copy()
+        segments = diagram.segments.copy()
         while len(segments)>0:
             number_of_circles +=1
             segment = segments[0]
-            self.remove_segments_of_circle(segment,segments)
+            self.remove_segments_of_circle(diagram,segment,segments)
         return number_of_circles
 
-    def get_monomial_of_state(self):
-        return [self.get_number_of_A_labels(),self.get_number_of_B_labels(),self.get_number_of_circles_in_splitting()-1]
+    def get_monomial_of_state(self,diagram):
+        return [self.get_number_of_A_labels(),self.get_number_of_B_labels(),self.get_number_of_circles_in_splitting(diagram)-1]
 
     
         
-
-
-
-class JonesPolynom:
-    def __init__(self,pd_notation):
-        self.pd_notation = pd_notation
-        self.diagram = KnotDiagram(pd_notation)
-
-    def get_twist(self):
-        return self.diagram.get_twist_number()
-    
-    def get_kauffman_bracket(self):
-        labels = ["A","B"]
-        kauffman_bracket = []
-        for i in range(2**self.diagram.number_of_crossings):
-            binary = get_binary(i,self.diagram.number_of_crossings)
-            state_labels = list(map(binary_to_label,binary))
-            state = JonesState(state_labels,self.pd_notation,self.diagram.segments)
-            state_polynom = state.get_monomial_of_state()
-            kauffman_bracket.append(state_polynom)
-        result = get_specialisation(kauffman_bracket)
-        twist = self.get_twist()
-        power = -3*twist
-        if abs(power)%2==0:
-            coefficient = 1
-        else:
-            coefficient = -1
-        mon = [coefficient,power]
-        result = list(map(multiply_monomials,result,[mon]*len(result)))
-        return result
-
 
 
