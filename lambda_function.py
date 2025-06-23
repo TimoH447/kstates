@@ -26,9 +26,11 @@ def compute_lattice_data(parsed_pd_notation,fixed_segment,filename=None):
         "number_of_states": len(lattice.nodes),
         "f_polynomial": lattice.get_f_polynomial().to_latex(),
         "alexander_polynomial": diagram.get_alexander_polynom().to_latex(),
+        "kauffman_bracket": diagram.get_kauffman_bracket().to_latex(),
         "minimal_state": str(lattice.get_minimal_state()),
         "maximal_state": str(lattice.get_maximal_state()),
         "sequence_min_to_max": str(lattice.get_sequence_min_to_max()),
+        "knot_diagram_quiver": diagram.get_quiver_notation_qpa(),
     }
     return results
 
