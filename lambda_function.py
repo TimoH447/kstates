@@ -20,7 +20,7 @@ def compute_lattice_data(parsed_pd_notation,fixed_segment,filename=None):
         lattice_image = LatticeImage(lattice, image_size=(512, 1024), padding=(10, 20), text_size=9)
         lattice_image.draw_lattice(filename)
     results = {
-        "pd_notation": diagram.get_pd_notation(),
+        "pd_notation": str(diagram.get_pd_notation()),
         "number_of_states": len(lattice.nodes),
         "f_polynomial": lattice.get_f_polynomial().to_latex(),
         "alexander_polynomial": diagram.get_alexander_polynom().to_latex(),
