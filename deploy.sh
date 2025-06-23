@@ -7,6 +7,7 @@ mkdir deploy
 # Copy your source code
 cp -r src/ deploy/
 cp lambda_function.py deploy/
+cp rolfsen_pd_dict.json deploy/
 
 # Install dependencies into deploy folder
 pip install --target deploy/ pillow --platform manylinux2014_x86_64 --only-binary=:all: --upgrade
