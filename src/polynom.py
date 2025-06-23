@@ -12,25 +12,17 @@ def simplify_laurent_polynom(polynom):
     return simplified_polynom
 
 def specialize_monom(monom,specialization):
-    specialized_laurent = []
-    for spec in product(*specialization):
-        power = 0
-        coefficient = 1
-        for i,factor in enumerate(spec):
-            n = factor[1]*monom[i+1]
-            power +=  n
-            if n!=0:
-                coefficient *= factor[0]
-        coefficient *= monom[0]
-        specialized_laurent.append([coefficient,power])
+    specialized_laurent = LaurentPolynom([[monom[0],0]])
+    for i in range(len(specialization)):
+        specialized_laurent = specialized_laurent*(specialization[i]**monom[i+1])
     return specialized_laurent
-    
+
 class Polynom:
     def __init__(self,polynom):
         self.polynom = polynom
 
     def __repr__(self):
-        return str(self.polynom)
+        return "Polynom: " + str(self.polynom)
 
     def to_latex(self):
         pass
@@ -62,7 +54,7 @@ class MultivariatePolynom(Polynom):
                 polynomial_latex += " + " + term_latex_string
         return polynomial_latex
 
-    def specialize_to_laurent(self,specialization):
+    def specialize_to_laurent(self,specialization, spec="mono"):
         """
         polynom is a list of monomials
         each monomial is a list with the first entry being the coefficient,
@@ -70,20 +62,28 @@ class MultivariatePolynom(Polynom):
         E.g. a polynom in the variables x,y,z looks like:
         [[1,1,0,0],[-1,1,1,1],[1,1,2,0]] = x - xyz + xy^2 
 
-        specialization is a list for each variable of the multivariable polynom
-        a laurent polynom of the form [[coefficient,power],...]
+        specialization is a LaurentPolynom object for each variable of the multivariable polynom
+        i.e.: [LaurentPolynom([[...]]),...]
         """
-        laurent = []
+        laurent = LaurentPolynom([[0,0]])
         for monom in self.polynom:
-            specialized = specialize_monom(monom,specialization)
-            for term in specialized:
-                laurent.append(term)
-        return LaurentPolynom(simplify_laurent_polynom(laurent))
-        
+            specialized_mon = specialize_monom(monom,specialization)
+            laurent = laurent + specialized_mon
+        laurent.simplify()
+        return laurent
 
+def multiply_laurent_monom(term):
+    """
+    expected input term = [[coefficient_a,power_a], [coefficient_b,power_b]]
+    returns [coefficient_a*coefficient_b,power_a+power_b]"""
+    result = [term[0][0]*term[1][0],term[0][1]+term[1][1]]
+    return result
 
 class LaurentPolynom(Polynom):
     def __init__(self,polynom):
+        """
+        polynom is a list in the following format: [[coefficient,power],...]
+        """
         self.polynom = polynom
 
     def to_latex(self):
@@ -112,7 +112,65 @@ class LaurentPolynom(Polynom):
             polynom_latex = polynom_latex[1:].strip()
         return polynom_latex
 
+    def simplify(self):
+        simplified_polynom = []
+        for summand in self.polynom:
+            if any(term[1] == summand[1] for term in simplified_polynom):
+                for term in simplified_polynom:
+                    if term[1] == summand[1]:
+                        term[0] += summand[0]
+            else:
+                simplified_polynom.append(summand)
+        for term in simplified_polynom:
+            if term[0]==0:
+                simplified_polynom.remove(term)
+        self.polynom = simplified_polynom
+
+    def __add__(self,other):
+        polynom = self.polynom.copy()
+        for term in other.polynom:
+            polynom.append(term)
+        sum = LaurentPolynom(polynom)
+        sum.simplify()
+        return sum
+
+    def __mul__(self,other):
+        if not isinstance(other,LaurentPolynom):
+            raise NotImplementedError("Only multiply laurent with other laurent polynoms")
+        self.simplify()
+        other.simplify()
+        polynom_a = self.polynom
+        polynom_b = other.polynom
+        result = []
+        for term in product(polynom_a,polynom_b):
+            summand = multiply_laurent_monom(term)
+            result.append(summand)
+        return LaurentPolynom(result)
+
+    def __pow__(self,power):
+        self.simplify()
+        if power<0:
+            if len(self.polynom)>1:
+                raise ValueError("Laurent polynom inverse does not exist")
+            else:
+                monom = self.polynom[0].copy()
+                monom[1]=monom[1]*power
+                return LaurentPolynom([monom])
+        elif power==0:
+            return LaurentPolynom([[1,0]])
+        else:
+            result = LaurentPolynom([[1,0]])
+            for i in range(power):
+                result = self*result
+            return result
+                
+        
+        
+
 if __name__=="__main__":
-    polynom = [[1,1],[-1,4],[0,3],[-1,-3]]
+    polynom = [[-1,2],[-1,-2],[1,3]]
+    polynom_b = [[0,0]]
     laurent = LaurentPolynom(polynom)
-    print(laurent.to_latex())
+    laurent_b  =LaurentPolynom(polynom_b)
+    new = laurent+laurent_b
+    print(new)

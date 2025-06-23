@@ -3,7 +3,7 @@ from src.lattice import StateLattice
 from src.visualize import LatticeImage
 from src.algebra import JacobianAlgebra
 from src.two_bridge_knots import TwoBridgeDiagram
-import src.jonespolynom
+from src.polynom import LaurentPolynom
 
 from PIL import Image
 
@@ -97,16 +97,16 @@ if __name__ == "__main__":
     knot = TwoBridgeDiagram([3,2])
     pd_notation = knot.get_pd_notation()
     
-    print(f"Jones: {knot.get_kauffman_bracket()}")
+    print(f"Jones: {knot.get_kauffman_bracket().to_latex()}")
 
     diagram = KnotDiagram(pd_notation)
     lattice = diagram.get_lattice(1)
-    print("alex new:")
+    print("\nalex new:")
     print(diagram.get_alexander_polynom().to_latex())
 
-    print("special")
-    specialization = [[[-1,-1]] for segment in diagram.segments]
-    specialization[1][0]=[1,-2]
+    print("\nspecial")
+    specialization = [LaurentPolynom([[-1,-1]]) for segment in diagram.segments]
+    specialization[1]=LaurentPolynom([[1,-2]])
     print(specialization)
     f_pol = lattice.get_f_polynomial()
     print(f_pol.specialize_to_laurent(specialization).to_latex())

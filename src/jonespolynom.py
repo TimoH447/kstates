@@ -19,53 +19,19 @@ def binary_to_label(binary):
         return "B"
     raise ValueError("Label has to be 0 or 1")
 
-def get_summands_binomial_theorem(power):
-    summands = []
-    if power == 0:
-        return [[1,0]]
-    elif power == 1:
-        return [[-1,2],[-1,-2]]
-    for i in range(power+1):
-        coefficient = math.comb(power,i)
-        power_in_summand = 2*(i-power+i)
-        if power%2 ==1:
-            coefficient = -coefficient
-        summands.append([coefficient,power_in_summand])
-    return summands
-
-def multiply_monomials(mon_a,mon_b):
-    coefficient = mon_a[0]*mon_b[0]
-    power = mon_a[1] +mon_b[1]
-    return [coefficient,power]
-
-def simplify_laurent_polynom(polynom):
-    simplified_polynom = []
-    for summand in polynom:
-        if any(term[1] == summand[1] for term in simplified_polynom):
-            for term in simplified_polynom:
-                if term[1] == summand[1]:
-                    term[0] += summand[0]
-        else:
-            simplified_polynom.append(summand)
-    return simplified_polynom
-
-def get_specialisation(polynom):
-    specialisation = []
-    for mon in polynom:
-        power = mon[2]
-        summands_binomial_theorem = get_summands_binomial_theorem(power)
-        number_of_summands = len(summands_binomial_theorem)
-        other_factor = [1,mon[0]-mon[1]]
-        summands_multiplied = list(map(multiply_monomials,summands_binomial_theorem,[other_factor]*number_of_summands))
-        simplified_polynom = simplify_laurent_polynom(summands_multiplied)
-        for summand in simplified_polynom:
-            specialisation.append(summand)
-    result = simplify_laurent_polynom(specialisation)
-    return result
-
 class JonesState:
     def __init__(self,labels):
         self.labels = labels
+
+    @classmethod
+    def from_integer(cls,number_of_crossings,state_number):
+        """
+        For a knot diagram with n crossings there are 2^n states,
+        this method turns integer (0 to 2^n-1) into binary and uses this for the labels"""
+        binary = get_binary(state_number, number_of_crossings)
+        state_labels = list(map(binary_to_label,binary)) # use same labelling as Kauffman ("A" or "B")
+        return cls(state_labels)
+
 
     def get_number_of_A_labels(self):
         number_of_A_labels = 0
@@ -131,7 +97,7 @@ class JonesState:
         return number_of_circles
 
     def get_monomial_of_state(self,diagram):
-        return [self.get_number_of_A_labels(),self.get_number_of_B_labels(),self.get_number_of_circles_in_splitting(diagram)-1]
+        return [1,self.get_number_of_A_labels(),self.get_number_of_B_labels(),self.get_number_of_circles_in_splitting(diagram)-1]
 
     
         

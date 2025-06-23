@@ -2,7 +2,8 @@ from random import randint
 
 from src.kstate import KauffmanState
 from src.lattice import StateLattice
-from src.jonespolynom import get_binary, JonesState, binary_to_label, multiply_monomials, get_specialisation 
+from src.jonespolynom import JonesState
+from src.polynom import LaurentPolynom, MultivariatePolynom
 
 class Region:
     def __init__(self,segments):
@@ -289,11 +290,11 @@ class KnotDiagram:
         specialization = []
         for segment in self.segments:
             if self.is_segment_from_under_to_over(segment):
-                specialization.append([[-1,1]])
+                specialization.append(LaurentPolynom([[-1,1]]))
             elif self.is_segment_from_over_to_under(segment):
-                specialization.append([[-1,-1]])
+                specialization.append(LaurentPolynom([[-1,-1]]))
             else:
-                specialization.append([[1,0]])
+                specialization.append(LaurentPolynom([[1,0]]))
         return specialization
 
     def get_lattice(self,segment):
@@ -311,29 +312,15 @@ class KnotDiagram:
         specialization = self.get_alexander_specialization()
         return f_pol.specialize_to_laurent(specialization)
 
+    def get_kauffman_bracket_specialization(self):
+        return [LaurentPolynom([[1,1]]),LaurentPolynom([[1,-1]]), LaurentPolynom([[-1,2],[-1,-2]])]
+
     def get_kauffman_bracket(self):
-        labels = ["A","B"]
         kauffman_bracket = []
         for i in range(2**self.number_of_crossings):
-            binary = get_binary(i,self.number_of_crossings)
-            state_labels = list(map(binary_to_label,binary))
-            state = JonesState(state_labels)
+            state = JonesState.from_integer(self.number_of_crossings,i)
             state_polynom = state.get_monomial_of_state(self)
             kauffman_bracket.append(state_polynom)
-        result = get_specialisation(kauffman_bracket)
-        twist = self.get_twist_number()
-        power = -3*twist
-        if abs(power)%2==0:
-            coefficient = 1
-        else:
-            coefficient = -1
-        mon = [coefficient,power]
-        result = list(map(multiply_monomials,result,[mon]*len(result)))
+        unspecialized_kauffman_bracket = MultivariatePolynom(kauffman_bracket)
+        result = unspecialized_kauffman_bracket.specialize_to_laurent(self.get_kauffman_bracket_specialization())
         return result
-
-    
-    
-        
-
-
-    
