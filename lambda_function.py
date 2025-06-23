@@ -3,8 +3,6 @@ import boto3
 from botocore.exceptions import ClientError
 import os
 import sys
-import uuid
-from urllib.parse import unquote_plus
 from PIL import Image
 import PIL.Image
 
@@ -73,9 +71,11 @@ def parse_tb_input(body):
 
 def parse_rolfsen_input(body):
     rolfsen_number = body.get('knot_input')
+    rolfsen_pd_dict = None
     with open("rolfsen_pd_dict.json") as f:
         rolfsen_pd_dict = json.load(f)
     pd_notation = rolfsen_pd_dict[rolfsen_number]
+    pd_notation = [tuple(crossing) for crossing in pd_notation] if pd_notation else None
     fixed_segment= body.get('fixed_segment',None)
     return pd_notation,fixed_segment
 
@@ -150,3 +150,12 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': json.dumps(result)
     }
+
+if __name__=="__main__":
+    body = {
+        "notation_type": "r",
+        "knot_input": "5_1",
+        "fixed_segment": 1
+    }
+    pd_notation,fixed_segment = parse_input(body)
+    print(compute_lattice_data(pd_notation,fixed_segment))
