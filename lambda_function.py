@@ -9,9 +9,8 @@ from PIL import Image
 import PIL.Image
 
 from src.visualize import LatticeImage
-from src.lattice import StateLattice
 from src.knotdiagram import KnotDiagram
-from src.two_bridge_knots import TwoBridgeKnot
+from src.two_bridge_knots import TwoBridgeDiagram
             
 def compute_lattice_data(parsed_pd_notation,fixed_segment,filename=None):
     """
@@ -66,7 +65,7 @@ def parse_tb_input(body):
     tb_notation = body.get('knot_input')
     tb_notation = tb_notation.split(",")
     tb_notation = list(map(int,tb_notation))
-    tb_knot = TwoBridgeKnot(tb_notation)
+    tb_knot = TwoBridgeDiagram(tb_notation)
     pd_notation = tb_knot.get_pd_notation()
     fixed_segment = body.get('fixed_segment', None)
     return pd_notation,fixed_segment
