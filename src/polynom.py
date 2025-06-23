@@ -12,6 +12,12 @@ def simplify_laurent_polynom(polynom):
     return simplified_polynom
 
 def specialize_monom(monom,specialization):
+    """
+    input monom is a list:
+    [coefficient,var_a_power,var_b_power, ...]
+    specialization is list of length number of variables of the monom (i.e. len(monom)-1)
+    containing laurent polynoms
+    """
     specialized_laurent = LaurentPolynom([[monom[0],0]])
     for i in range(len(specialization)):
         specialized_laurent = specialized_laurent*(specialization[i]**monom[i+1])
@@ -110,7 +116,7 @@ class LaurentPolynom(Polynom):
                 if term[1] == 1:
                     polynom_latex += f" {sign} {coefficient}t"
                 else:
-                    polynom_latex += f" {sign} {coefficient}t^{{{term[1]}}}"
+                    polynom_latex += f" {sign} {coefficient}t^{{{int(term[1])}}}"
         polynom_latex = polynom_latex.strip()
         if polynom_latex.startswith("+"):
             polynom_latex = polynom_latex[1:].strip()
@@ -129,6 +135,21 @@ class LaurentPolynom(Polynom):
             if term[0]==0:
                 simplified_polynom.remove(term)
         self.polynom = simplified_polynom
+
+    def get_specialization(self,specialization):
+        """
+        Input specialization as LaurentPolynom object
+        e.g: LaurentPolynom([[1,1],[-1,2]])
+
+        returns specialized laurent polynom
+        """
+        specialization = [specialization]
+        result = LaurentPolynom([[0,0]])
+        for monom in self.polynom:
+            result = result + specialize_monom(monom,specialization)
+        return result
+            
+
 
     def __add__(self,other):
         polynom = self.polynom.copy()

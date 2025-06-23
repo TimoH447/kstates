@@ -97,7 +97,7 @@ if __name__ == "__main__":
     knot = TwoBridgeDiagram([3,2])
     pd_notation = knot.get_pd_notation()
     
-    print(f"Jones: {knot.get_kauffman_bracket().to_latex()}")
+    print(f"Jones: {knot.get_jones_polynom().to_latex()}")
 
     diagram = KnotDiagram(pd_notation)
     lattice = diagram.get_lattice(1)

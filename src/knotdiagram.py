@@ -323,4 +323,18 @@ class KnotDiagram:
             kauffman_bracket.append(state_polynom)
         unspecialized_kauffman_bracket = MultivariatePolynom(kauffman_bracket)
         result = unspecialized_kauffman_bracket.specialize_to_laurent(self.get_kauffman_bracket_specialization())
+        twist = self.get_twist_number()
+        power = -3*twist
+        if abs(power)%2==0:
+            coefficient = 1
+        else:
+            coefficient = -1
+        mon = LaurentPolynom([[coefficient,power]])
+        result = mon * result
+        result.simplify()
         return result
+
+    def get_jones_polynom(self):
+        kauffman_polynom = self.get_kauffman_bracket()
+        specialization = LaurentPolynom([[1,-0.25]])
+        return kauffman_polynom.get_specialization(specialization)
