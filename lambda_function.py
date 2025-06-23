@@ -18,14 +18,14 @@ def compute_lattice_data(parsed_pd_notation,fixed_segment,filename=None):
     Compute the state lattice for a given knot diagram and fixed segment, and generate an image of the lattice.
     """
     diagram = KnotDiagram(parsed_pd_notation)
-    lattice = StateLattice(diagram,fixed_segment)
+    lattice = diagram.get_lattice(fixed_segment)
     if filename:
         lattice_image = LatticeImage(lattice, image_size=(512, 1024), padding=(10, 20), text_size=9)
         lattice_image.draw_lattice(filename)
     results = {
         "number_of_states": len(lattice.nodes),
-        "f_polynomial": lattice.get_f_polynomial_latex(),
-        "alexander_polynomial": lattice.get_alexander_polynomial_latex(),
+        "f_polynomial": lattice.get_f_polynomial().to_latex(),
+        "alexander_polynomial": diagram.get_alexander_polynom().to_latex(),
         "minimal_state": str(lattice.get_minimal_state()),
         "maximal_state": str(lattice.get_maximal_state()),
         "sequence_min_to_max": str(lattice.get_sequence_min_to_max()),
