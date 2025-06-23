@@ -1,6 +1,7 @@
 from random import randint
 
 from src.kstate import KauffmanState
+from src.lattice import StateLattice
 
 class Region:
     def __init__(self,segments):
@@ -275,5 +276,42 @@ class KnotDiagram:
         if segment_positions[0] == 1 or segment_positions[0] == 3:
             return True
         return False
+
+    def get_alexander_specialization(self):
+        """
+        returns a list for each variable in the f polynom, i.e. number of segments many laurent polynom
+        that can be later inserted in the f polynom, 
+        e.g. if the f polynom has 4 variables:
+        [ [[1,2]], [[1,0]], [[1,0]], [[-1,0],[1,1]] ] = (t^2,1,1,-1+t)
+        """
+        specialization = []
+        for segment in self.segments:
+            if self.is_segment_from_under_to_over(segment):
+                specialization.append([[-1,1]])
+            elif self.is_segment_from_over_to_under(segment):
+                specialization.append([[-1,-1]])
+            else:
+                specialization.append([[1,0]])
+        return specialization
+
+    def get_lattice(self,segment):
+        """
+        returns a StateLattice object
+        """
+        return StateLattice(self,segment)
+
+    def get_alexander_polynom(self):
+        """
+        returns a LaurentPolynom object
+        """
+        lattice = self.get_lattice(1)
+        f_pol = lattice.get_f_polynomial()
+        specialization = self.get_alexander_specialization()
+        return f_pol.specialize_to_laurent(specialization)
+
+    
+    
+        
+
 
     

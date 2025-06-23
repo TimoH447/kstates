@@ -131,85 +131,10 @@ class StateLattice:
                     made_transposition = True
         return sequence_of_transpositions
 
-    def get_alexander_specialization(self):
-        """
-        returns a list for each variable in the f polynom, i.e. number of segments many laurent polynom
-        that can be later inserted in the f polynom, 
-        e.g. if the f polynom has 4 variables:
-        [ [[1,2]], [[1,0]], [[1,0]], [[-1,0],[1,1]] ] = (t^2,1,1,-1+t)
-        """
-        specialization = []
-        for segment in self.diagram.segments:
-            if self.diagram.is_segment_from_under_to_over(segment):
-                specialization.append([[-1,1]])
-            elif self.diagram.is_segment_from_over_to_under(segment):
-                specialization.append([[-1,-1]])
-            else:
-                specialization.append([[1,0]])
-        return specialization
-
     def get_f_polynomial(self):
         polynomial = []
         for node in self.nodes:
             term =[0] + [0]*self.diagram.number_of_segments
             polynomial.append(node.transpositions.get_transposition_count(term))
-        return polynomial 
+        return src.polynom.MultivariatePolynom(polynomial)
     
-
-
-    def get_f_polynomial_latex(self):
-        """
-        Get the f-polynomial of the lattice in LaTeX format.
-        """
-        polynomial = self.get_f_polynomial()
-        f_polynomial_latex = "1"
-        for summand in polynomial:
-            term_latex_string = ""
-            if summand[0]==0:
-                for i, count in enumerate(summand):
-                    if count > 1:
-                        term_latex_string += f"y_{{{i}}}^{count}"
-                    elif count == 1:
-                        term_latex_string += f"y_{{{i}}}"
-                f_polynomial_latex += " + " + term_latex_string
-        return f_polynomial_latex
-
-    def get_alexander_polynomial(self):
-        f_poly = self.get_f_polynomial()
-        specialization = self.get_alexander_specialization()
-        alex_pol = src.polynom.multivariable_to_laurent(f_poly,specialization)
-        return alex_pol
-
-    def get_specialized_f_pol(self,specialization):
-        f_poly = self.get_f_polynomial()
-        spec_poly = src.polynom.multivariable_to_laurent(f_poly,specialization)
-        return spec_poly
-    
-    def get_alexander_polynomial_latex(self):
-        """
-        Get the Alexander polynomial of the lattice in LaTeX format.
-        """
-        alexander_polynomial = self.get_alexander_polynomial()
-        alexander_polynomial_latex = ""
-        for term in alexander_polynomial:
-            if term[0] == 0:
-                continue
-            sign = "+" if term[0] > 0 else "-"
-            coefficient = abs(term[0])
-            if term[1] == 0:
-                alexander_polynomial_latex += f" {sign} {coefficient}"
-            else:
-                if coefficient == 1:
-                    coefficient = ""
-                elif coefficient == -1:
-                    coefficient = ""
-                if term[1] == 1:
-                    alexander_polynomial_latex += f" {sign} {coefficient}t"
-                else:
-                    alexander_polynomial_latex += f" {sign} {coefficient}t^{{{term[1]}}}"
-        alexander_polynomial_latex = alexander_polynomial_latex.strip()
-        if alexander_polynomial_latex.startswith("+"):
-            alexander_polynomial_latex = alexander_polynomial_latex[1:].strip()
-        return alexander_polynomial_latex
-
-
