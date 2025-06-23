@@ -70,11 +70,27 @@ def parse_tb_input(body):
     fixed_segment = body.get('fixed_segment', None)
     return pd_notation,fixed_segment
 
+def parse_rolfsen_input(body):
+    rolfsen_number = body.get('knot_input')
+    with open("rolfsen_pd_dict.json") as f:
+        rolfsen_pd_dict = json.load(f)
+    pd_notation = rolfsen_pd_dict[rolfsen_number]
+    fixed_segment= body.get('fixed_segment',None)
+    return pd_notation,fixed_segment
 
 def parse_input(body):
+    """
+    expects body dictionary to contain the keys:
+    notation_type: "pd","tb","r" (string)
+    knot_input: depending of knot notation
+
+    returns tuple of pd_notation (list) and fixed_segment (integer)
+    """
     notation_type = body.get('notation_type','pd')
     if notation_type == 'tb':
         pd_notation, fixed_segment = parse_tb_input(body)
+    elif notation_type == 'r':
+        pd_notation, fixed_segment = parse_rolfsen_input(body)
     else:
         pd_notation,fixed_segment = parse_pd_input(body)
     return pd_notation,fixed_segment 
