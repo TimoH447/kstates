@@ -1,5 +1,6 @@
 ### Careful really terrible code is coming
 from src.knotdiagram import Crossing
+from src.knotdiagram import KnotDiagram
 
 class BoxString:
     def __init__(self,box_entrance,  entrance_segment ,  length):
@@ -355,10 +356,30 @@ class Box:
             fourth_segment = segments_string_a[0]
         return Crossing([first_segment,second_segment,third_segment,fourth_segment])
 
-class TwoBridgeDiagram:
+class TwoBridgeDiagram(KnotDiagram):
     def __init__(self, conway_normalform):
         self.normalform = conway_normalform
+        self.construct_boxes()
+        self.fill_out_box_segments()
+        pd_notation = []
+        for box in self.boxes:
+            box.construct_crossings()
+            for crossing in box.crossings:
+                pd_notation.append(tuple(crossing.segments))
+        super().__init__(pd_notation)
 
+
+    def get_rational(self):
+        tmp = self.normalform
+        tmp.reverse()
+        nenner = tmp[0]
+        zähler = 1
+        for a in tmp[1:]:
+            switch = a*nenner + zähler
+            zähler = nenner
+            nenner = switch
+        return (zähler,nenner)
+    
     def construct_boxes(self):
         boxes = []
         number_of_boxes = len(self.normalform)
@@ -413,8 +434,6 @@ class TwoBridgeDiagram:
                         connections[i+2][1] = (i,3)
         self.connections = connections
 
-
-
     def fill_out_box_segments(self):
         number_of_boxes = len(self.normalform)
         box = 0
@@ -440,32 +459,3 @@ class TwoBridgeDiagram:
                 current_segment = sum(self.normalform) +1
                 current_box = self.boxes[box]
 
-class TwoBridgeKnot:
-    def __init__(self, conway_normalform):
-        self.normalform = conway_normalform
-
-    def __repr__(self):
-        return f"Conway Normalform: {self.normalform}"
-
-    def get_rational(self):
-        tmp = self.normalform
-        tmp.reverse()
-        nenner = tmp[0]
-        zähler = 1
-        for a in tmp[1:]:
-            switch = a*nenner + zähler
-            zähler = nenner
-            nenner = switch
-        return (zähler,nenner)
-    
-    def get_pd_notation(self):
-        diagram = TwoBridgeDiagram(self.normalform)
-        diagram.construct_boxes()
-        diagram.fill_out_box_segments()
-        pd_notation = []
-        for box in diagram.boxes:
-            box.construct_crossings()
-            for crossing in box.crossings:
-                pd_notation.append(tuple(crossing.segments))
-
-        return pd_notation

@@ -2,9 +2,11 @@ from src.knotdiagram import KnotDiagram
 from src.lattice import StateLattice
 from src.visualize import LatticeImage
 from src.algebra import JacobianAlgebra
-from src.two_bridge_knots import TwoBridgeKnot
+from src.two_bridge_knots import TwoBridgeDiagram
+from src.polynom import LaurentPolynom
 
 from PIL import Image
+
 k16 = [
     (2,9,3,10),
     (4,2,5,1),
@@ -82,14 +84,32 @@ def main():
     jac = JacobianAlgebra._from_pd_notation(trefoil_pd)
     print(jac.get_equivalent_paths([(3,1),(1,4),(4,6),(6,3)]))
 
-if __name__ == "__main__":
-    knot = TwoBridgeKnot([2,1])
+def get_paths_of_2bridge():
+    knot = TwoBridgeDiagram([3,3])
     print(knot)
     print(knot.get_pd_notation())
-    diagram = KnotDiagram(knot.get_pd_notation())
-    print(diagram.get_quiver_notation_qpa())
-    lattice = StateLattice(diagram,1)
-    print(lattice.get_alexander_polynomial_latex())
+    algebra = JacobianAlgebra._from_pd_notation(knot.get_pd_notation())
+    paths = algebra.get_equivalent_paths([(1,7),(7,5),(5,9)])
+    paths.sort(key=len)
+    print(paths)
 
-    lattice_image = LatticeImage(lattice, image_size=(1024, 2048), padding=(10, 20), text_size=6)
+if __name__ == "__main__":
+    knot = TwoBridgeDiagram([3,2])
+    pd_notation = knot.get_pd_notation()
+    
+    print(f"Jones: {knot.get_kauffman_bracket().to_latex()}")
+
+    diagram = KnotDiagram(pd_notation)
+    lattice = diagram.get_lattice(1)
+    print("\nalex new:")
+    print(diagram.get_alexander_polynom().to_latex())
+
+    print("\nspecial")
+    specialization = [LaurentPolynom([[-1,-1]]) for segment in diagram.segments]
+    specialization[1]=LaurentPolynom([[1,-2]])
+    print(specialization)
+    f_pol = lattice.get_f_polynomial()
+    print(f_pol.specialize_to_laurent(specialization).to_latex())
+
+
 

@@ -1,5 +1,6 @@
 from src.kstate import StateNode
 from src.kstate import TranspositionSequence
+import src.polynom
 
 class StateLattice:
     """
@@ -135,90 +136,5 @@ class StateLattice:
         for node in self.nodes:
             term =[0] + [0]*self.diagram.number_of_segments
             polynomial.append(node.transpositions.get_transposition_count(term))
-        return polynomial 
-
-    def get_f_polynomial_latex(self):
-        """
-        Get the f-polynomial of the lattice in LaTeX format.
-        """
-        polynomial = self.get_f_polynomial()
-        f_polynomial_latex = "1"
-        for summand in polynomial:
-            term_latex_string = ""
-            if summand[0]==0:
-                for i, count in enumerate(summand):
-                    if count > 1:
-                        term_latex_string += f"y_{{{i}}}^{count}"
-                    elif count == 1:
-                        term_latex_string += f"y_{{{i}}}"
-                f_polynomial_latex += " + " + term_latex_string
-        return f_polynomial_latex
-
-    def get_f_pol_specialization(self):
-        """
-        Get the specialization of the f-polynomial which is equal to the Alexander polynomial.
-        """
-        polynomial = self.get_f_polynomial()
-        specialized_polynomial = []
-        for summand in polynomial:
-            if summand[0] == 1:
-                specialized_polynomial.append([1,0])
-            else:
-                term = []
-                t_power = 0
-                for i, count in enumerate(summand):
-                    if self.diagram.is_segment_from_under_to_over(i):
-                        t_power += count
-                    elif self.diagram.is_segment_from_over_to_under(i):
-                        t_power -= count
-                sign = sum(summand) % 2
-                if sign == 0:
-                    term = [1, t_power]
-                else: 
-                    term = [-1, t_power]
-                specialized_polynomial.append(term)
-        return specialized_polynomial
-
-    def get_alexander_polynomial(self):
-        """
-        Get the Alexander polynomial of the lattice.
-        """
-        specialized_polynomial = self.get_f_pol_specialization()
-        alexander_polynomial = []
-        for summand in specialized_polynomial:
-            if any(term[1] == summand[1] for term in alexander_polynomial):
-                for term in alexander_polynomial:
-                    if term[1] == summand[1]:
-                        term[0] += summand[0]
-            else:
-                alexander_polynomial.append(summand)
-        return alexander_polynomial
+        return src.polynom.MultivariatePolynom(polynomial)
     
-    def get_alexander_polynomial_latex(self):
-        """
-        Get the Alexander polynomial of the lattice in LaTeX format.
-        """
-        alexander_polynomial = self.get_alexander_polynomial()
-        alexander_polynomial_latex = ""
-        for term in alexander_polynomial:
-            if term[0] == 0:
-                continue
-            sign = "+" if term[0] > 0 else "-"
-            coefficient = abs(term[0])
-            if term[1] == 0:
-                alexander_polynomial_latex += f" {sign} {coefficient}"
-            else:
-                if coefficient == 1:
-                    coefficient = ""
-                elif coefficient == -1:
-                    coefficient = ""
-                if term[1] == 1:
-                    alexander_polynomial_latex += f" {sign} {coefficient}t"
-                else:
-                    alexander_polynomial_latex += f" {sign} {coefficient}t^{{{term[1]}}}"
-        alexander_polynomial_latex = alexander_polynomial_latex.strip()
-        if alexander_polynomial_latex.startswith("+"):
-            alexander_polynomial_latex = alexander_polynomial_latex[1:].strip()
-        return alexander_polynomial_latex
-
-

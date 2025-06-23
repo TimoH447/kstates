@@ -1,6 +1,9 @@
 from random import randint
 
 from src.kstate import KauffmanState
+from src.lattice import StateLattice
+from src.jonespolynom import JonesState
+from src.polynom import LaurentPolynom, MultivariatePolynom
 
 class Region:
     def __init__(self,segments):
@@ -23,14 +26,29 @@ class Region:
         return f"Region {self.bounding_segments}"
     
 class Crossing:
-    def __init__(self, segments):
+    def __init__(self, segments, id_number = None):
         """
         segments: 4 segments of the crossing in counterclockwise order
         """
         self.segments= segments
+        self.id = id_number
 
     def get_segment(self,segment_no):
         return self.segments[segment_no]
+
+    def get_sign(self):
+        a = self.segments[1]
+        b = self.segments[3]
+        if abs(a-b)==1:
+            if a>b:
+                return 1
+            else:
+                return -1
+        else:
+            if a>b:
+                return -1
+            else:
+                return 1
 
     def __repr__(self):
         return f"Crossing {self.segments}"
@@ -88,7 +106,7 @@ class KnotDiagram:
         pd_notation: knot diagram in pd notation, for each crossing a 4-tuple
         """
         self.pd_notation = pd_notation
-        self.crossings = [Crossing(segments) for segments in pd_notation]
+        self.crossings = [Crossing(segments,i) for i,segments in enumerate(pd_notation)]
         self.number_of_crossings = len(pd_notation)
         self.number_of_regions = self.number_of_crossings + 2
         self.number_of_segments = 2*self.number_of_crossings
@@ -102,6 +120,20 @@ class KnotDiagram:
 
     def get_pd_notation(self):
         return self.pd_notation
+    
+    def get_crossings_containing_segment(self,segment):
+        crossing_containg_the_segment = []
+        for crossing in self.crossings:
+            if segment in crossing.segments:
+                crossing_containg_the_segment.append(crossing)
+        return crossing_containg_the_segment
+
+    def get_twist_number(self):
+        twist = 0
+        for crossing in self.crossings:
+            twist += crossing.get_sign()
+        return twist
+
 
     def get_quiver_notation_qpa(self):
         number_of_vertices = str(self.number_of_crossings*2)
@@ -248,4 +280,47 @@ class KnotDiagram:
             return True
         return False
 
-    
+    def get_alexander_specialization(self):
+        """
+        returns a list for each variable in the f polynom, i.e. number of segments many laurent polynom
+        that can be later inserted in the f polynom, 
+        e.g. if the f polynom has 4 variables:
+        [ [[1,2]], [[1,0]], [[1,0]], [[-1,0],[1,1]] ] = (t^2,1,1,-1+t)
+        """
+        specialization = []
+        for segment in self.segments:
+            if self.is_segment_from_under_to_over(segment):
+                specialization.append(LaurentPolynom([[-1,1]]))
+            elif self.is_segment_from_over_to_under(segment):
+                specialization.append(LaurentPolynom([[-1,-1]]))
+            else:
+                specialization.append(LaurentPolynom([[1,0]]))
+        return specialization
+
+    def get_lattice(self,segment):
+        """
+        returns a StateLattice object
+        """
+        return StateLattice(self,segment)
+
+    def get_alexander_polynom(self):
+        """
+        returns a LaurentPolynom object
+        """
+        lattice = self.get_lattice(1)
+        f_pol = lattice.get_f_polynomial()
+        specialization = self.get_alexander_specialization()
+        return f_pol.specialize_to_laurent(specialization)
+
+    def get_kauffman_bracket_specialization(self):
+        return [LaurentPolynom([[1,1]]),LaurentPolynom([[1,-1]]), LaurentPolynom([[-1,2],[-1,-2]])]
+
+    def get_kauffman_bracket(self):
+        kauffman_bracket = []
+        for i in range(2**self.number_of_crossings):
+            state = JonesState.from_integer(self.number_of_crossings,i)
+            state_polynom = state.get_monomial_of_state(self)
+            kauffman_bracket.append(state_polynom)
+        unspecialized_kauffman_bracket = MultivariatePolynom(kauffman_bracket)
+        result = unspecialized_kauffman_bracket.specialize_to_laurent(self.get_kauffman_bracket_specialization())
+        return result

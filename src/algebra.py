@@ -76,13 +76,13 @@ class JacobianAlgebra:
 
         return cls(diagram,vertices,arrows,relations)
 
-    def get_equivalent_paths(self,path):
+    def get_equivalent_paths(self,path,max_number_of_paths = 100):
         equivalent_paths = [path]
         queue = [(path,None)]
         end_i = 0
         while queue:
             end_i+=1
-            if end_i>100:
+            if end_i>10000:
                 print("to much")
                 break
 
@@ -94,6 +94,8 @@ class JacobianAlgebra:
                     continue
                 equivalent_paths.append(new_path[0])
                 queue.append(new_path)
+            if len(equivalent_paths)>max_number_of_paths:
+                break
         return equivalent_paths
 
 
