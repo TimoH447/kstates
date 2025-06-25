@@ -140,7 +140,7 @@ class KnotDiagram:
         arrows = []
         for crossing in self.pd_notation:
             for i in range(4):
-                arrows.append([crossing[i],crossing[-1]])
+                arrows.append([crossing[i],crossing[i-1]])
         arrows = str(arrows)
 
         return f"Quiver( {number_of_vertices}, {arrows})"
