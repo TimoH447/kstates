@@ -1,7 +1,7 @@
 from src.knotdiagram import KnotDiagram
 from src.lattice import StateLattice
 from src.visualize import LatticeImage
-from src.algebra import JacobianAlgebra,Path
+from src.algebra import JacobianAlgebra,Path, StateModule
 from src.two_bridge_knots import TwoBridgeDiagram
 from src.polynom import LaurentPolynom
 
@@ -109,7 +109,7 @@ def get_paths_of_2bridge():
 def get_rolfsen_pd(rolfsen_number):
     with open("rolfsen_pd_dict.json") as f:
         rolfsen_pd_dict = json.load(f)
-    return rolfsen_pd_dict[rolfsen_number]
+    return [tuple(x) for x in rolfsen_pd_dict[rolfsen_number]]
 
 def compute_dimensions_rolfsen():
     with open("rolfsen_pd_dict.json") as f:
@@ -137,8 +137,18 @@ if __name__ == "__main__":
 # 32, 92, 184, 308
 #  12, 40, 84, 144
 # 6 + 6*1, 10 +(1)  10 +(2) 10 +(3) 10, 14*6, 18 * 8
-    algebra = JacobianAlgebra._from_pd_notation(get_rolfsen_pd("10_81"))
+    pd_notation = get_rolfsen_pd("4_1")
+    diagram = KnotDiagram(pd_notation)
+    algebra = JacobianAlgebra._from_pd_notation(pd_notation)
     print(algebra.get_dimension())
+    print(algebra.get_qpa_input())
+    lattice = diagram.get_lattice(1)
+    module = StateModule(lattice.get_sequence_min_to_max(),algebra.quiver)
+    print(module.get_module_qpa(diagram))
+    #algebra = JacobianAlgebra._from_pd_notation(get_rolfsen_pd("10_161"))
+
+
+
 
 """
     crit = Path([(4,9),(9,2),(2,8),(8,18),(18,7),(7,16),(16,6),(6,15)])
