@@ -55,6 +55,9 @@ class StateLattice:
                     self.edges.append((node, new_node, transposition))
                 else:
                     self.edges.append((node, new_node, transposition))
+        max_state = self.nodes[-1]
+        self.transposed_segments = max_state.get__transposed_segments()
+
     
     def get_node_by_transpositions(self, transpositions_string):
         """

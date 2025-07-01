@@ -1,10 +1,11 @@
 from src.knotdiagram import KnotDiagram
 from src.lattice import StateLattice
 from src.visualize import LatticeImage
-from src.algebra import JacobianAlgebra
+from src.algebra import JacobianAlgebra,Path, StateModule
 from src.two_bridge_knots import TwoBridgeDiagram
 from src.polynom import LaurentPolynom
 
+import json
 from PIL import Image
 
 k16 = [
@@ -39,6 +40,18 @@ link_pd = [
     (19,10,20,11),
     (21,17,20,18)
 ]
+perko = [
+    (2,13,3,14),
+    (5,10,6,11),
+    (7,16,8,17),
+    (8,1,9,2),
+    (11,18,12,19),
+    (12,3,13,4),
+    (15,6,16,7),
+    (17,14,18,15),
+    (19,4,20,5),
+    (20,9,1,10)
+]
 knot_8_8 = [
     (1,7,2,6),
     (3,11,4,10),
@@ -50,10 +63,10 @@ knot_8_8 = [
     (15,12,16,13)
 ]
 fig_8=[
-    (4,8,3,1),
-    (2,7,1,6),
-    (8,4,7,5),
-    (6,3,5,2),
+    (4,1,3,8),
+    (2,6,1,7),
+    (8,5,7,4),
+    (6,2,5,3),
 ]
 paper_knot = [
     (1,13,20,14),
@@ -93,23 +106,57 @@ def get_paths_of_2bridge():
     paths.sort(key=len)
     print(paths)
 
+def get_rolfsen_pd(rolfsen_number):
+    with open("rolfsen_pd_dict.json") as f:
+        rolfsen_pd_dict = json.load(f)
+    return [tuple(x) for x in rolfsen_pd_dict[rolfsen_number]]
+
+def compute_dimensions_rolfsen():
+    with open("rolfsen_pd_dict.json") as f:
+        rolfsen_pd_dict = json.load(f)
+    del rolfsen_pd_dict["0_1"]
+    for knot in rolfsen_pd_dict:
+        pd_notation = rolfsen_pd_dict[knot]
+        algebra = JacobianAlgebra._from_pd_notation(pd_notation)
+        print(f"Knot {knot} - Dimension: {algebra.get_dimension()}")
+
+
+
 if __name__ == "__main__":
-    knot = TwoBridgeDiagram([3,2])
-    pd_notation = knot.get_pd_notation()
+    difference = []
+    k9_18 = [
+        (1,8,2,9),
+        (1,7,18,8),
+        (2,12,3,11),
+        (18,13,17,12),
+        (17,13,16,14),
+        (16,7,15,6),
+        (6,15,5,14),
+        (5,9,4,10),
+        (11,3,10,4)
+    ]
+    #compute_dimensions_rolfsen()
+# 32, 92, 184, 308
+#  12, 40, 84, 144
+# 6 + 6*1, 10 +(1)  10 +(2) 10 +(3) 10, 14*6, 18 * 8
+    #pd_notation = get_rolfsen_pd("4_1")
+    knot = TwoBridgeDiagram([2,3,3,3])
+    print(knot)
+    knot.get_structure_info()
+
+
+
+"""
+    crit = Path([(4,9),(9,2),(2,8),(8,18),(18,7),(7,16),(16,6),(6,15)])
+    for element in basis:
+        if element==crit:
+            print(element)
+            print("Equiv_paths:")
+            print(element.equivalent_paths)
+"""
+# 10_81, 10_80, 10_79, 10_148, 10_149, 10_150, 10_151, 10_152, 10_153, 10_154  
     
-    print(f"Jones: {knot.get_jones_polynom().to_latex()}")
-
-    diagram = KnotDiagram(pd_notation)
-    lattice = diagram.get_lattice(1)
-    print("\nalex new:")
-    print(diagram.get_alexander_polynom().to_latex())
-
-    print("\nspecial")
-    specialization = [LaurentPolynom([[-1,-1]]) for segment in diagram.segments]
-    specialization[1]=LaurentPolynom([[1,-2]])
-    print(specialization)
-    f_pol = lattice.get_f_polynomial()
-    print(f_pol.specialize_to_laurent(specialization).to_latex())
-
+        
+    
 
 

@@ -1,4 +1,5 @@
 from itertools import product
+from operator import itemgetter
 
 def simplify_laurent_polynom(polynom):
     simplified_polynom = []
@@ -64,7 +65,18 @@ class MultivariatePolynom(Polynom):
                 polynomial_latex += " + " + term_latex_string
         return polynomial_latex
 
-    def specialize_to_laurent(self,specialization, spec="mono"):
+    def get_specialization(self,spec):
+        """
+        return the specialization input for method: specialize_to_laurent
+        input list of list: [[],[],...]
+        each list is a monom for a variable, ie number of multivariate variables"""
+        result = []
+        for monom in spec:
+            result.append(LaurentPolynom([monom]))
+        return result
+            
+
+    def specialize_to_laurent(self,specialization):
         """
         polynom is a list of monomials
         each monomial is a list with the first entry being the coefficient,
@@ -95,6 +107,28 @@ class LaurentPolynom(Polynom):
         polynom is a list in the following format: [[coefficient,power],...]
         """
         self.polynom = polynom
+
+    def __eq__(self, value):
+        self.simplify()
+        value.simplify()
+        if all([monom in value.polynom for monom in self.polynom]) and all([monom in self.polynom for monom in value.polynom]):
+            return True
+        return False
+
+    def equal_up_to_factor(self,value):
+        if not isinstance(value,LaurentPolynom):
+            return False
+        a = LaurentPolynom(self.polynom)
+        b = LaurentPolynom(value.polynom)
+        a.simplify()
+        b.simplify()
+        a.transform_into_polynom()
+        b.transform_into_polynom()
+        if a==b:
+            return True
+        return False
+
+            
 
     def to_latex(self):
         """
@@ -134,6 +168,8 @@ class LaurentPolynom(Polynom):
         for term in simplified_polynom:
             if term[0]==0:
                 simplified_polynom.remove(term)
+        if simplified_polynom == []:
+            simplified_polynom = [[0,0]]
         self.polynom = simplified_polynom
 
     def get_specialization(self,specialization):
@@ -148,8 +184,27 @@ class LaurentPolynom(Polynom):
         for monom in self.polynom:
             result = result + specialize_monom(monom,specialization)
         return result
-            
 
+    def sort(self):
+        self.polynom = sorted(self.polynom,key=itemgetter(1))
+
+    def transform_into_polynom(self):
+        lowest_power = self.polynom[0][1]
+        for summand in self.polynom:
+            if summand[1]<lowest_power:
+                lowest_power = summand[1]
+        if lowest_power==0:
+            return
+        x = LaurentPolynom([[1,-lowest_power]])
+        transformed = x *self
+        self.polynom = transformed.polynom
+
+    def print_normalized_to_latex(self):
+        laurent = LaurentPolynom(self.polynom)
+        laurent.simplify()
+        laurent.transform_into_polynom()
+        print(laurent.to_latex())
+        
 
     def __add__(self,other):
         polynom = self.polynom.copy()

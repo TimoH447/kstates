@@ -7,6 +7,9 @@ class BoxString:
         self.input = (box_entrance, entrance_segment)
         self.output = self._calculate_output(box_entrance,entrance_segment, length) 
         self.length = length
+
+    def __repr__(self):
+        return f"String: I {self.input}, O {self.output}"
     
     def _calculate_output(self, input_entrance,input_segment, length):
         number_of_crossings = length -1
@@ -42,7 +45,7 @@ class Box:
         self.strings = []
     
     def __repr__(self):
-        return f"Box number {self.box_number} on {self.bridge} bridge with {self.number_of_crossings} crossings"
+        return f"Box number {self.box_number} on {self.bridge} bridge with {self.number_of_crossings} crossings, Strings: {self.strings}"
 
     def update_last_string(self,segment,string=-1):
         self.strings[string].update_string_exit(segment)
@@ -368,6 +371,12 @@ class TwoBridgeDiagram(KnotDiagram):
                 pd_notation.append(tuple(crossing.segments))
         super().__init__(pd_notation)
 
+    def __repr__(self):
+        return f"2-bridge: {self.normalform}, PD: {self.pd_notation}"
+
+    def get_structure_info(self):
+        print(self.boxes)
+        print(self.connections)
 
     def get_rational(self):
         tmp = self.normalform
@@ -393,6 +402,13 @@ class TwoBridgeDiagram(KnotDiagram):
         self.construct_connections()
 
     def construct_connections(self):
+        """
+        for every box in the 2-bridge knot we construct a connection list
+        for every box we have 4 tuples, tuple number 0 specifies the connection of the string leaving this box at position 0, tuple 1 is for position 1 and so on
+        the first entry of the tuple specifies the number of the other box the string is connected to, the second number specifies the position in the other box where the string enters 
+        i.e [[(0,2),(1,3),(2,2),(1,0)],...]
+        """
+        
         number_of_boxes = len(self.normalform)
         connections =[]
         if number_of_boxes == 1:
@@ -456,6 +472,5 @@ class TwoBridgeDiagram(KnotDiagram):
                 if number_of_boxes==1:
                     box=0
                     entrance=2
-                current_segment = sum(self.normalform) +1
                 current_box = self.boxes[box]
 

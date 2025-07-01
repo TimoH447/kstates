@@ -25,6 +25,14 @@ class TranspositionSequence:
                 segment_list[segment] += 1
         return segment_list
 
+    def get_transposed_segments(self):
+        unique_transpositions = []
+        transpositions = self.string.split(",")
+        for transposition in transpositions:
+            if not transposition in unique_transpositions:
+                unique_transpositions.append(int(transposition))
+        return unique_transpositions
+
 
     def __eq__(self, value):
         if not isinstance(value, TranspositionSequence):
@@ -48,6 +56,9 @@ class StateNode:
 
     def get_length(self):
         return self.transpositions.get_length()
+    
+    def get__transposed_segments(self):
+        return self.transpositions.get_transposed_segments()
 
     def __eq__(self, value):
         if not isinstance(value, StateNode):
