@@ -73,7 +73,5 @@ class LatticeImage:
             im.save(filename)
 
 
-
-
     
 

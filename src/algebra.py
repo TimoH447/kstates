@@ -1,4 +1,6 @@
-from src.knotdiagram import KnotDiagram
+from src.quiver import QuiverPlotter
+
+from itertools import product
 
 def get_identity_matrix(n):
     if n==1:
@@ -262,20 +264,23 @@ class BasisBuilder:
         """
         basis = [Path(vertex)]
         queue = [Path(vertex)]
+        connections = []
         limit = max_dim_at_vertex
         while queue and limit>0:
             limit-=1
             path = queue.pop(0)
             for next_path in self._expand_path(path):
-                if not next_path in basis and not self._is_cero_path(next_path,max_path_extending):
-                    queue.append(next_path)
-                    basis.append(next_path)
+                if not self._is_cero_path(next_path,max_path_extending):
+                    connections.append([path,next_path])
+                    if not next_path in basis:
+                        queue.append(next_path)
+                        basis.append(next_path)
         if limit==0:
             self.algebra.vertices_with_incomplete_basis.append(vertex)
             self.warning = f"Overflow of paths starting at vertex {vertex} (more than {max_dim_at_vertex}), the algebra might be infinte dimensional"
             print(self.warning)
-        self.algebra.projectives[vertex] = basis
-        return basis
+        self.algebra.projectives[vertex] = ProjectiveRep(self.algebra.quiver, basis, connections,vertex)
+        return ProjectiveRep(self.algebra.quiver, basis, connections,vertex)
 
     def _is_cero_path(self,new_path,max_path_extending):
         new_path.set_equivalent_paths(self.algebra, max_path_extending)
@@ -296,8 +301,8 @@ class BasisBuilder:
     def get_path_basis(self, max_dim_at_vertex=1000, max_path_extending=4000):
         basis = []
         for vertex in self.algebra.quiver.vertices:
-            basis_at_vertex = self.get_projective_basis(vertex, max_dim_at_vertex, max_path_extending)
-            basis = basis + basis_at_vertex
+            projective = self.get_projective_basis(vertex, max_dim_at_vertex, max_path_extending)
+            basis = basis + projective.basis
         basis = [el for el in basis if not el.is_cero()]
         return basis
     
@@ -305,6 +310,17 @@ class Quiver:
     def __init__(self,vertices,arrows):
         self.vertices = vertices
         self.arrows = arrows
+    
+    @classmethod
+    def from_pd(cls, pd_notation):
+        vertices = []
+        arrows = []
+        for crossing in pd_notation:
+            for i,segment in enumerate(crossing):
+                if segment not in vertices:
+                    vertices.append(segment)
+                arrows.append((segment,crossing[(i+3)%4]))
+        return cls(vertices,arrows)
 
     def __repr__(self):
         return f"Q: Vertices: {self.vertices}, Arrows: {self.arrows}"
@@ -327,10 +343,95 @@ class Quiver:
         i = self.arrows.index(arrow)
         return f"a{i+1}"
 
-class StateModule:
-    def __init__(self,sequence,quiver):
-        self.sequence = sequence
+class RepMap:
+    """
+    arrow is a tuple (source_vertex, target_vertex)
+    matrix is given as list containing the columns as list of integers
+    """
+    def __init__(self,arrow,matrix):
+        self.arrow = arrow
+        self.matrix = matrix
+
+    def __repr__(self):
+        return f"Arrow: {self.arrow}, Matrix: {self.matrix}."
+
+class Representation:
+    def __init__(self, quiver, dimension_vector, maps):
         self.quiver = quiver
+        self.dimension_vector = dimension_vector
+        self.maps = maps
+
+    def get_dimension_vector(self):
+        return self.dimension_vector
+
+    def print(self, quiver_plotter):
+        quiver_plotter.print_quiver(self.get_dimension_vector())
+
+    def get_map_list_string(self):
+        map_list = ""
+        for map in self.maps:
+            if map.matrix==[] or map.matrix == 0:
+                continue
+            map_list += str(map)
+            map_list += "\n"
+        return map_list
+
+    def draw_module(self, quiver_plotter):
+        quiver_plotter.draw_module(self)
+
+class ProjectiveRep(Representation):
+    def __init__(self, quiver, basis, connections, vertex):
+        self.vertex = vertex
+        self.quiver = quiver
+        self.basis = basis
+        self.connections = connections
+        super().__init__(quiver, self.get_dimension_vector(), self.get_maps())
+
+    def __repr__(self):
+        return f"P({self.vertex})"
+
+    def get_dimension_vector(self):
+        dimension_vector = [0]*len(self.quiver.vertices)
+        for path in self.basis:
+            target = path.target()
+            dimension_vector[target-1] += 1
+        return dimension_vector
+
+    def _get_map(self, arrow, vs_basis):
+        arrow = tuple(arrow)
+        source, target = arrow
+        source_basis = vs_basis[source-1]
+        target_basis = vs_basis[target-1]
+        matrix = []
+        if len(source_basis)==0 or len(target_basis)==0:
+            return RepMap(arrow,matrix)
+        for b_i in source_basis:
+            c_j = [0]*len(target_basis)
+            for connection in self.connections:
+                if b_i == connection[0] and connection[1].target()==target:
+                    target_i = target_basis.index(connection[1])
+                    c_j[target_i]=1
+                    break
+            matrix.append(c_j)
+        return RepMap(arrow,matrix)
+
+    def get_maps(self):
+        maps = []
+        vs_basis = [[] for i in range(len(self.quiver.vertices))]
+        for path in self.basis:
+            target= path.target()
+            vs_basis[target-1].append(path)
+        for arrow in self.quiver.arrows:
+            map = self._get_map(arrow,vs_basis)
+            maps.append(map)
+        return maps
+
+class StateModule(Representation):
+    def __init__(self,sequence,diagram):
+        self.sequence = sequence
+        self.diagram = diagram
+        self.quiver = diagram.get_quiver()
+        super().__init__(self.quiver,self.get_dimension_vector(),self.get_maps())
 
     def get_dimension_vector(self):
         dim_vec = [0]*len(self.quiver.vertices)
@@ -338,7 +439,7 @@ class StateModule:
             dim_vec[vertex-1]+=1
         return dim_vec
 
-    def get_map(self,arrow,diagram):
+    def get_map(self,arrow):
         dim_vec = self.get_dimension_vector()
         source, target = arrow
         ds =dim_vec[source-1]
@@ -348,17 +449,24 @@ class StateModule:
         elif ds-dt!=0:
             return get_matrix(dt,ds)
         elif ds==dt:
-            crossing = diagram.get_crossing_from_arrow(arrow)
+            crossing = self.diagram.get_crossing_from_arrow(arrow)
             if all([dim_vec[vertex-1]==ds for vertex in crossing.segments]):
                 if all([self.sequence.index(source)<=self.sequence.index(vertex) for vertex in crossing.segments]):
                     return get_jordan_matrix(ds)
                 
             return get_identity_matrix(ds) 
 
-    def get_module_maps_qpa(self,diagram):
+    def get_maps(self):
+        maps=[]
+        for arrow in self.quiver.arrows:
+            matrix = self.get_map(arrow)
+            maps.append(RepMap(arrow,matrix))
+        return maps
+
+    def get_module_maps_qpa(self):
         qpa_string = "["
         for arrow in self.quiver.arrows:
-            map = self.get_map(arrow,diagram)
+            map = self.get_map(arrow)
             if map!=0:
                 qpa_string += f"[\"{self.quiver.get_arrow_label(arrow)}\", {map}],"
         if len(qpa_string)>1:
@@ -366,13 +474,215 @@ class StateModule:
         qpa_string += "]"
         return qpa_string
 
-    def get_module_qpa(self,diagram):
-        qpa_string = f"M := RightModuleOverPathAlgebra(A, {self.get_dimension_vector()}, {self.get_module_maps_qpa(diagram)});"
+    def get_module_qpa(self):
+        qpa_string = f"M := RightModuleOverPathAlgebra(A, {self.get_dimension_vector()}, {self.get_module_maps_qpa()});"
         return qpa_string
+
+class DirectSumModules:
+    def __init__(self,modules):
+        self.modules = modules
+
+    def __repr__(self):
+        return f"Direct sum: {self.modules}"
+
+    def get_dimension_vector(self):
+        if len(self.modules)==0:
+            return []
+        n = len(self.modules[0].get_dimension_vector())
+        dim_vec = [0]*n
+        for module in self.modules:
+            for i,dim in enumerate(module.get_dimension_vector()):
+                dim_vec[i]+=dim
+        return dim_vec
+
+class DirectSumProjectives(DirectSumModules):
+    def __init__(self, modules, projectives):
+        self.projectives = projectives # list with the number of times each projective indecomposable is in the sum
+        super().__init__(modules)
+    
+    @classmethod
+    def from_projective_list(cls,projectives,algebra):
+        modules = []
+        for i,mult in enumerate(projectives):
+            for j in range(mult):
+                modules.append(algebra.get_projective_module(i+1))
+        return cls(modules,projectives)
+    
+    @classmethod
+    def from_projective(cls,projective):
+        n = len(projective.get_dimension_vector())
+        list_of_projectives = [0]*n
+        list_of_projectives[projective.vertex-1]=1
+        return cls([projective],list_of_projectives)
+
+    @classmethod
+    def from_projectives(cls,projectives):
+        list_of_projectives = [0]*len(projectives[0].get_dimension_vector())
+        for projective in projectives:
+            list_of_projectives[projective.vertex-1]+=1
+        return cls(projectives,list_of_projectives)
+
+    def add_projective(self,projective,algebra):
+        projectives = self.projectives.copy()
+        projectives[projective.vertex-1] += 1
+        return DirectSumProjectives.from_projective_list(projectives,algebra)
+
+    def __eq__(self, value):
+        if not isinstance(value,DirectSumProjectives):
+            return False
+        for i in range(len(self.projectives)):
+            if self.projectives[i]!=value.projectives[i]:
+                return False
+        return True
+
+
+
+def get_reduced_vector(dim_vec_projective, dim_vec_cover):
+    dim_vec_reduced = []
+    for i in range(len(dim_vec_projective)):
+        dim_vec_reduced.append(dim_vec_cover[i]-dim_vec_projective[i])
+    return dim_vec_reduced
+
+    
+def is_cover(dim_vec_reduced,dim_vec_module):
+    if not len(dim_vec_reduced)==len(dim_vec_module):
+        raise ValueError(f"dimension vectos: {dim_vec_reduced} and {dim_vec_module} have to have the same length")
+    for i in range(len(dim_vec_module)):
+        if dim_vec_reduced[i] < dim_vec_module[i]:
+            return False
+    return True
+    
+def is_reduced_cover(cover,algebra,module):
+    projectives = algebra.get_projectives()
+    dim_vec_cover = cover.get_dimension_vector()
+    dim_vec_module = module.get_dimension_vector()
+    if not is_cover(dim_vec_cover,dim_vec_module):
+        return False 
+    for projective in cover.modules:
+        dim_vec_reduced = get_reduced_vector(projective.get_dimension_vector(), dim_vec_cover)
+        if is_cover(dim_vec_reduced,dim_vec_module):
+            return False
+    return True
+
+def get_kernel(cover,module):
+    dim_vec_cover = cover.get_dimension_vector()
+    dim_vec_module = module.get_dimension_vector()
+    kernel = []
+    for i in range(len(dim_vec_cover)):
+        kernel.append(dim_vec_cover[i]-dim_vec_module[i])
+    return kernel
+
+def get_sum_of_projectives(multiplicities,algebra):
+    modules = []
+    for i,multiplicity in enumerate(multiplicities):
+        for j in range(multiplicity):
+            modules.append(algebra.get_projective_module(i+1))
+    return DirectSumModules(modules)
+        
+def has_equal_dim_vec(dim_vec_a, dim_vec_b):
+    for i in range(len(dim_vec_a)):
+        if dim_vec_a[i]!=dim_vec_b[i]:
+            return False
+    return True
+
+def has_smaller_dim_vec(dim_vec_a,dim_vec_b):
+    for i in range(len(dim_vec_a)):
+        if dim_vec_a[i]>dim_vec_b[i]:
+            return False
+    return True
+    
+def is_projective(kernel,algebra):
+    possibilities = product([0,1],repeat=len(kernel))
+    for cover in possibilities:
+        if any(cover):
+            sum = get_sum_of_projectives(cover,algebra)
+            dim_vec_sum = sum.get_dimension_vector()
+            if has_equal_dim_vec(dim_vec_sum,kernel):
+                return sum
+    return False
+
+def is_projective_v2(kernel, algebra):
+    projectives = algebra.get_projectives()
+    possible_projectives = [DirectSumProjectives.from_projective(projective) for projective in projectives]
+    while len(possible_projectives)!=0:
+        possible  = possible_projectives.pop(0)
+        possible_dim_vec  = possible.get_dimension_vector()
+        if has_equal_dim_vec(possible_dim_vec, kernel):
+            return possible
+        if has_smaller_dim_vec(possible_dim_vec,kernel):
+            new_options = []
+            for projective in projectives:
+                next_option = possible.add_projective(projective,algebra)
+                if next_option not in possible_projectives:
+                    new_options.append(next_option)
+            possible_projectives.extend(new_options)
+    return False
+        
+        
+def get_standard_cover(module,algebra):
+    cover_module = []
+    for i,proj in enumerate(module.get_dimension_vector()):
+        if proj == 1:
+            cover_module.append(algebra.get_projective_module(i+1))
+    cover_module = DirectSumModules(cover_module)
+    return cover_module
+
+def get_custom_cover(module,algebra):
+    return [
+        DirectSumProjectives.from_projective_list([0,2,0,1,0,0,0,1,0,1,0,0,0,2,0,0,0,0],algebra),
+        ]
+
+def get_covers_by_length(module, algebra, length):
+    covers = product(algebra.quiver.vertices, repeat=length)
+    cover_list = []
+    for cover in covers:
+        modules = []
+        for vertex in cover:
+            modules.append(algebra.get_projective_module(vertex))
+        cover_list.append(DirectSumProjectives.from_projectives(modules))
+    return cover_list
+        
+    
+
+        
+
+def compute_projective_covers(algebra,module):
+    n = len(module.get_dimension_vector())
+    possible_covers = product([0,1], repeat=n)
+    proj_covers = []
+    for cover in possible_covers:
+        if any(cover):
+            cover_module  = []
+            for i,proj in enumerate(cover):
+                if proj == 1:
+                    cover_module.append(algebra.get_projective_module(i+1))
+            cover_module = DirectSumModules(cover_module)
+            if is_reduced_cover(cover_module,algebra,module):
+                proj_covers.append(cover_module)
+    return proj_covers
+
+def compute_projective_resolution(algebra,module):
+    resoultions = []
+    covers = compute_projective_covers(algebra,module)
+    #covers = get_custom_cover(module,algebra)
+    print(covers)
+    for cover in covers:
+        print(cover)
+        kernel = get_kernel(cover,module)
+        print(f"Kernel: {kernel}")
+        if not any(kernel):
+            resoultions.append([module,cover])
+        proj = is_projective_v2(kernel,algebra)
+        print(f"Is projective: {proj}")
+        if proj:
+            resoultions.append([module, cover, proj])
+    if resoultions ==[]:
+        raise ValueError("This module has no projective resolution of dimension 1.")
+    return resoultions
             
 
 class JacobianAlgebra:
-    def __init__(self,  vertices, arrows, relations):
+    def __init__(self,  vertices, arrows, relations, max_unique = 200 ,max_extension = 1000):
         """
         vertices= [1,...,2n]
         arrows = [(a,b),(b,c),...]
@@ -386,10 +696,13 @@ class JacobianAlgebra:
         self.vertices_with_incomplete_basis = []
         self.projectives = {}
         self.possibly_paths_with_infinite_equivalents = []
+
+        self.max_unique = max_unique
+        self.max_extension = max_extension
     
     @classmethod
-    def _from_pd_notation(cls,pd_notation):
-        diagram = KnotDiagram(pd_notation)
+    def _from_diagram(cls,diagram, max_unique=200, max_extension=1000):
+        pd_notation = diagram.get_pd_notation()
         vertices = []
         arrows = []
         relations = []
@@ -407,7 +720,7 @@ class JacobianAlgebra:
                 region_path.pop(-1)
                 crossing_path = [(segment,crossing[(i-1)%4]),(crossing[(i-1)%4],crossing[(i-2)%4]),(crossing[(i-2)%4],crossing[(i-3)%4])]
                 relations.append(Relation(region_path,crossing_path))
-        return cls(vertices,arrows,relations)
+        return cls(vertices,arrows,relations, max_unique, max_extension)
 
     def reverse_arrows(self):
         reversed_arrows = [(arrow[1],arrow[0])   for arrow in self.quiver.arrows]
@@ -436,20 +749,28 @@ class JacobianAlgebra:
                 #self.quiver.arrows.remove
                 #update.relations
 
-    def get_projective_module(self,vertex,max_unique, max_extenstion):
+    def get_projective_module(self,vertex):
+        max_unique, max_extension = self.max_unique, self.max_extension
         if not self.projectives.__contains__(vertex):
-            basis = BasisBuilder(self).get_projective_basis(vertex,max_unique,max_extenstion)
+            projective = BasisBuilder(self).get_projective_basis(vertex,max_unique,max_extension)
         else:
-            basis = self.projectives[vertex]
-        module = [0]*len(self.quiver.vertices)
-        for path in basis:
-            target = path.target()
-            module[target-1] += 1
-        return module
+            projective = self.projectives[vertex]
+        return projective
+    
+    def get_projectives(self):
+        projectives = []
+        for vertex in self.quiver.vertices:
+            if not self.projectives.__contains__(vertex):
+                projectives.append(BasisBuilder(self).get_projective_basis(vertex,self.max_unique,self.max_extension))
+            else:
+                projectives.append( self.projectives[vertex])
+        return projectives
+            
+        
 
     def get_dimension(self):
         if self.basis == None:
-            self.basis = BasisBuilder(self).get_path_basis()
+            self.basis = BasisBuilder(self).get_path_basis(self.max_unique, self.max_extension)
         if len(self.vertices_with_incomplete_basis)>0:
             return "unknown"
         if len(self.possibly_paths_with_infinite_equivalents)>0:

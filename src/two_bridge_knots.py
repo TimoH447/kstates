@@ -35,18 +35,109 @@ class BoxString:
         segments[-1] = self.output[1]
         return segments
 
+    def get_segments_left_to_right(self):
+        segments = self.get_segments()
+        if self.input[0]>1:
+            segments.reverse()
+        return segments
 
 class Box:
     def __init__(self,bridge, number_of_crossings,box_number, number_of_boxes):
         self.bridge = bridge # upper or lower bridge in the knot
         self.number_of_crossings = number_of_crossings
         self.number_of_boxes = number_of_boxes
-        self.box_number=box_number
+        self.box_number=box_number #first box has number 0
         self.strings = []
     
     def __repr__(self):
         return f"Box number {self.box_number} on {self.bridge} bridge with {self.number_of_crossings} crossings, Strings: {self.strings}"
 
+    def _get_string_at_position(self,position):
+        a = self.strings[0]
+        if a.input[0]==position or a.output[0] == position:
+            return a
+        else:
+            return self.strings[1]
+
+    def _get_segments_left_to_right(self):
+        """
+        returns a list of the segments in the box
+        always two together are grouped if they are above or below each other
+        the first one is the top segment, the second is the bottom string
+        [[a,b],[c,d],...]
+        """
+        string_0 = self._get_string_at_position(0)
+        string_1 = self._get_string_at_position(1)
+        segments_0 = string_0.get_segments_left_to_right()
+        segments_1 = string_1.get_segments_left_to_right()
+        segments = []
+        for i in range(len(segments_0)):
+            if i%2==0:
+                segments.append([segments_0[i],segments_1[i]])
+            else:
+                segments.append([segments_1[i],segments_0[i]])
+        return segments
+            
+    def get_box_x_measures(self, previous_box_start, previous_box_width):
+        this_box_start = previous_box_start + previous_box_width + 2
+        this_box_width = self.number_of_crossings - 1
+        this_box_width = 1 if this_box_width == 0 else this_box_width
+        return this_box_start, this_box_width
+    
+    def _get_vertex_data_segment_position_0(self, previous_box_start, previous_box_width):
+        segment = self.get_segment_at_position(0)
+        x_coordinate = previous_box_start if self.bridge == "upper" else previous_box_start + previous_box_width +1
+        y_coordinate = 0 if self.bridge == "upper" else 2
+        return [segment,(x_coordinate, y_coordinate)]
+
+    def _get_vertex_data_segment_position_1(self, previous_box_start, previous_box_width):
+        segment = self.get_segment_at_position(1)
+        x_coordinate = previous_box_start + previous_box_width +1 if self.bridge == "upper" else previous_box_start+previous_box_width-1
+        y_coordinate = 2 if self.bridge == "upper" else 4
+        return [segment,(x_coordinate,y_coordinate)]
+    
+    def _get_inner_vertex_data(self, previous_box_start,previous_box_width):
+        inner_vertices = []
+        if self.number_of_crossings==1:
+            return []
+        segments = self._get_segments_left_to_right()
+        previous_vertices_end_x = previous_box_start + previous_box_width + 1
+        upper_segment_height = 0 if self.bridge=="upper" else 3
+        lower_segment_height = 1 if self.bridge=="upper" else 4
+        for i in range(1,len(segments)-1):
+            upper_segment = segments[i][0]
+            lower_segment = segments[i][1]
+            x_coordinate = previous_vertices_end_x + i
+            inner_vertices.append([upper_segment,(x_coordinate,upper_segment_height)])
+            inner_vertices.append([lower_segment,(x_coordinate,lower_segment_height)])
+        return inner_vertices
+
+    def _get_last_vertex_data(self,previous_box_start,previous_box_width):
+        segment = self.get_segment_at_position(3) if self.bridge == "upper" else self.get_segment_at_position(2)
+        x_coordinate = previous_box_start + previous_box_width + self.number_of_crossings
+        y_coordinate = 4 if self.bridge=="upper" else 0
+        return [segment,(x_coordinate,y_coordinate)]
+
+    def _get_first_vertex_data(self,previous_box_start,previous_box_width):
+        segment = 1
+        x_coordinate = previous_box_start + previous_box_width + self.number_of_crossings +2
+        y_coordinate = 2
+        return [segment,(x_coordinate,y_coordinate)]
+
+    def get_vertices_with_coordinates(self, previous_box_start, previous_box_width):
+        vertex_data_0 = self._get_vertex_data_segment_position_0(previous_box_start,previous_box_width)
+        vertex_data_1 = self._get_vertex_data_segment_position_1(previous_box_start,previous_box_width)
+        inner_vertices  = self._get_inner_vertex_data(previous_box_start,previous_box_width)
+        if self.box_number == 0:
+            vertex_data = []
+        else:
+            vertex_data = [vertex_data_0,vertex_data_1]
+        vertex_data.extend(inner_vertices)
+        if self.box_number == self.number_of_boxes-1:
+            vertex_data.append(self._get_last_vertex_data(previous_box_start,previous_box_width))
+            vertex_data.append(self._get_first_vertex_data(previous_box_start,previous_box_width))
+        return vertex_data
+    
     def update_last_string(self,segment,string=-1):
         self.strings[string].update_string_exit(segment)
 
@@ -189,8 +280,6 @@ class Box:
                     bridge = "lower"
                     entrance_next_box = 1
         return (next_box_number,bridge,entrance_next_box)
-
-
 
     def construct_crossings(self):
         if len(self.strings)!=2:
@@ -370,9 +459,19 @@ class TwoBridgeDiagram(KnotDiagram):
             for crossing in box.crossings:
                 pd_notation.append(tuple(crossing.segments))
         super().__init__(pd_notation)
+        self.type = "2-bridge"
+
+    def get_diagram_type(self):
+        return self.type
 
     def __repr__(self):
         return f"2-bridge: {self.normalform}, PD: {self.pd_notation}"
+
+    def print_quiver(self):
+        quiver_string = ""
+        length = len(self.normalform)
+
+
 
     def get_structure_info(self):
         print(self.boxes)

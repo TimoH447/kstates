@@ -4,6 +4,7 @@ from src.kstate import KauffmanState
 from src.lattice import StateLattice
 from src.jonespolynom import JonesState
 from src.polynom import LaurentPolynom, MultivariatePolynom
+from src.algebra import StateModule, Quiver
 
 class Region:
     def __init__(self,segments):
@@ -118,6 +119,11 @@ class KnotDiagram:
         self.number_of_regions = self.number_of_crossings + 2
         self.number_of_segments = 2*self.number_of_crossings
         self.segments = [i+1 for i in range(self.number_of_segments)]
+        self.type = "pd"
+
+    def get_diagram_type(self):
+        return self.type
+        
 
     def __repr__(self):
         knot_string="Knot:\n"
@@ -141,6 +147,15 @@ class KnotDiagram:
             return possible_crossings[0]
         else:
             return possible_crossings[1]
+
+    def get_quiver(self):
+        return Quiver.from_pd(self.pd_notation)
+
+    def get_state_module(self,segment):
+        lattice = self.get_lattice(segment)
+        state_module = StateModule(lattice.get_sequence_min_to_max(),self)
+        return state_module
+
         
     def get_twist_number(self):
         twist = 0
