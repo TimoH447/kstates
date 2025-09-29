@@ -213,7 +213,7 @@ class QuiverPlotter:
         for vertex in self.vertices:
             draw.text(vertex.get_coordinates_img(image_size,quiver_width,quiver_height,padding), vertex.get_text(), fill="black",anchor="mm",font_size=text_size)
         if filename==None:
-            image.save("quiver.png")
+            image.save("pics/quiver.png")
         else:
             image.save(filename)
 
@@ -239,6 +239,6 @@ class QuiverPlotter:
             draw.text(vertex.get_coordinates_img(image_size,quiver_width,quiver_height,padding), self.vertex_label(vertex,module), fill="black",anchor="mm",font_size=text_size)
         draw.text((image_size[0]+30,30), module.get_map_list_string(), font_size = text_size, align = "left")
         if filename==None:
-            image.save("module.png")
+            image.save("pics/module.png")
         else:
             image.save(filename)
